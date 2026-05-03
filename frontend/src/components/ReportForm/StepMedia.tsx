@@ -106,6 +106,7 @@ export function StepMedia({ data, onChange, errors, reportType }: StepMediaProps
             multiple
             className="dropzone-input"
             onChange={handleFileChange}
+            onClick={(e) => e.stopPropagation()}
             tabIndex={-1}
             aria-hidden="true"
           />
