@@ -24,6 +24,23 @@ const corsOrigin = allowedOrigin || 'http://localhost:3000';
 /* ── Compression ──────────────────────────────────────────── */
 app.use(compression());
 
+/* ── CORS preflight — must come before Helmet and all routes ─ */
+/*
+ * Vercel serverless functions don't persist connections, so the
+ * browser's OPTIONS preflight request may hit a cold instance that
+ * hasn't run the cors() middleware yet. Explicitly handling OPTIONS
+ * here ensures preflight always gets a 204 with the right headers
+ * regardless of middleware ordering.
+ */
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.status(204).end();
+});
+
 /* ── Security headers (Helmet) ────────────────────────────── */
 app.use(
   helmet({
