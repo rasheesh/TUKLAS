@@ -139,8 +139,8 @@ app.use('/api/auth/me/password', rateLimit({
 app.use('/api/cases', (req, res, next) => {
   if (req.method !== 'POST') return next();
   return rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 20,
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    max: 50,                    // 50 submissions per hour per IP — enough for testing and real use
     message: { error: 'Too many case submissions. Please wait before submitting again.' },
     standardHeaders: true,
     legacyHeaders: false,
