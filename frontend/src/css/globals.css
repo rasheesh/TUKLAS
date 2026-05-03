@@ -1,0 +1,244 @@
+/* CSS Variables - TUKLAS Color Palette */
+:root {
+  --color-maroon: #751518;
+  --color-maroon-dark: #5a0f11;
+  --color-maroon-light: #8a1e1f;
+  --color-white: #ffffff;
+  --color-text-dark: #2c3e50;
+  --color-text-light: #7f8c8d;
+  --color-bg-light: #f8f9fa;
+  --color-border: #e0e0e0;
+  --color-success: #27ae60;
+  --color-warning: #e67e22;
+  --color-info: #3498db;
+  
+  /* Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  --spacing-2xl: 4rem;
+  
+  /* Typography */
+  --font-family: var(--font-montserrat), 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
+  --font-size-5xl: 3rem;
+  
+  /* Border Radius */
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 1rem;
+  --border-radius-full: 9999px;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text-dark);
+  background-color: var(--color-white);
+  line-height: 1.6;
+  font-size: var(--font-size-base);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--font-size-5xl);
+}
+
+h2 {
+  font-size: var(--font-size-4xl);
+}
+
+h3 {
+  font-size: var(--font-size-3xl);
+}
+
+h4 {
+  font-size: var(--font-size-2xl);
+}
+
+h5 {
+  font-size: var(--font-size-xl);
+}
+
+h6 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+}
+
+a {
+  color: var(--color-maroon);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-maroon-light);
+}
+
+/* Buttons */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+}
+
+/* ============================================================
+   Error Boundary
+   ============================================================ */
+.error-boundary-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem);
+  text-align: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.error-boundary-icon {
+  width: clamp(48px, 8vw, 64px);
+  height: clamp(48px, 8vw, 64px);
+  color: var(--color-maroon);
+  opacity: 0.7;
+}
+
+.error-boundary-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.error-boundary-title {
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.error-boundary-msg {
+  font-size: clamp(0.82rem, 1.8vw, 0.95rem);
+  color: var(--color-text-light);
+  max-width: 380px;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.error-boundary-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: clamp(0.5rem, 1.5vw, 0.65rem) clamp(1rem, 3vw, 1.5rem);
+  background: var(--color-maroon);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--border-radius-full);
+  font-family: var(--font-family);
+  font-size: clamp(0.82rem, 1.8vw, 0.9rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.error-boundary-retry:hover {
+  background: var(--color-maroon-dark);
+}
+
+/* ============================================================
+   Shimmer skeleton
+   ============================================================ */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--border-radius-md);
+}
+
+.shimmer-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  padding: 0;
+}
+
+.shimmer-card-img {
+  width: 100%;
+  height: clamp(140px, 20vw, 180px);
+}
+
+.shimmer-card-body {
+  padding: clamp(0.75rem, 2vw, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.shimmer-line {
+  height: clamp(10px, 1.5vw, 14px);
+  border-radius: 4px;
+}
+
+.shimmer-line-short { width: 55%; }
+.shimmer-line-med   { width: 75%; }
+.shimmer-line-full  { width: 100%; }

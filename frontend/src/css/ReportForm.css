@@ -1,0 +1,900 @@
+/* ============================================================
+   ReportForm.css — Full styles for the Report a Case portal
+   ============================================================ */
+
+/* ── Page wrapper ─────────────────────────────────────────── */
+.report-page {
+  min-height: 100vh;
+  background-color: var(--color-bg-light);
+  font-family: var(--font-family);
+}
+
+.report-content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem);
+}
+
+/* ── Page heading ─────────────────────────────────────────── */
+.report-heading {
+  text-align: center;
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.report-heading h1 {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.report-heading p {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: var(--color-text-light);
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   SELECTION SCREEN
+   ============================================================ */
+.selection-screen {
+  animation: fadeInUp 0.35s ease both;
+}
+
+.selection-screen.slide-out {
+  animation: slideOut 0.3s ease forwards;
+}
+
+.selection-cards {
+  display: flex;
+  gap: clamp(1rem, 3vw, 1.75rem);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.selection-card {
+  flex: 1 1 260px;
+  max-width: 320px;
+  min-height: 280px;
+  background: var(--color-white);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+  transition:
+    transform var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.selection-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(117, 21, 24, 0.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.selection-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--color-maroon);
+  box-shadow: 0 12px 32px rgba(117, 21, 24, 0.15);
+}
+
+.selection-card:hover::before {
+  opacity: 1;
+}
+
+.selection-card:focus-visible {
+  outline: 3px solid var(--color-maroon);
+  outline-offset: 3px;
+}
+
+.selection-card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--border-radius-full);
+  background: rgba(117, 21, 24, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-base);
+  color: var(--color-maroon);
+}
+
+.selection-card-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.selection-card:hover .selection-card-icon {
+  background: rgba(117, 21, 24, 0.15);
+}
+
+.selection-card h2 {
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.selection-card p {
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  color: var(--color-text-light);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.selection-card-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selection-card-badge.missing {
+  background: rgba(230, 126, 34, 0.12);
+  color: var(--color-warning);
+}
+
+.selection-card-badge.unidentified {
+  background: rgba(52, 152, 219, 0.12);
+  color: #3498db;
+}
+
+/* ============================================================
+   FORM SHELL (progress + steps + content)
+   ============================================================ */
+.report-form-shell {
+  animation: fadeInUp 0.35s ease both;
+}
+
+/* ── Progress bar ─────────────────────────────────────────── */
+.progress-bar-track {
+  width: 100%;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: var(--border-radius-full);
+  margin-bottom: clamp(1.5rem, 4vw, 2rem);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--color-maroon);
+  border-radius: var(--border-radius-full);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Step indicator ───────────────────────────────────────── */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
+  gap: 0;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.step-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--color-border);
+  max-width: 80px;
+  transition: background var(--transition-base);
+  margin-bottom: 1.4rem; /* align with circles */
+}
+
+.step-connector.completed {
+  background: var(--color-maroon);
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius-full);
+  border: 2px solid var(--color-border);
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base);
+}
+
+.step-circle.active {
+  background: var(--color-maroon);
+  border-color: var(--color-maroon);
+  color: var(--color-white);
+  box-shadow: 0 0 0 4px rgba(117, 21, 24, 0.15);
+}
+
+.step-circle.completed {
+  background: var(--color-maroon);
+  border-color: var(--color-maroon);
+  color: var(--color-white);
+}
+
+.step-label {
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+  font-weight: 600;
+  color: var(--color-text-light);
+  text-align: center;
+  white-space: nowrap;
+  transition: color var(--transition-base);
+}
+
+.step-item.active .step-label,
+.step-item.completed .step-label {
+  color: var(--color-maroon);
+}
+
+/* ── Form card ────────────────────────────────────────────── */
+.form-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  animation: fadeInUp 0.3s ease both;
+}
+
+.form-card-title {
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 0.35rem;
+}
+
+.form-card-subtitle {
+  font-size: clamp(0.8rem, 1.8vw, 0.875rem);
+  color: var(--color-text-light);
+  margin-bottom: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+/* ── Form fields ──────────────────────────────────────────── */
+.form-group {
+  margin-bottom: clamp(1rem, 2.5vw, 1.35rem);
+}
+
+.form-label {
+  display: block;
+  font-size: clamp(0.8rem, 1.8vw, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: 0.4rem;
+}
+
+.form-label .required-star {
+  color: var(--color-maroon);
+  margin-left: 0.2rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  font-family: var(--font-family);
+  font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
+  color: var(--color-text-dark);
+  background: var(--color-white);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--color-maroon);
+  box-shadow: 0 0 0 3px rgba(117, 21, 24, 0.12);
+}
+
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+  border-color: #e74c3c;
+}
+
+.form-input.error:focus,
+.form-select.error:focus,
+.form-textarea.error:focus {
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.12);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.55;
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237f8c8d' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+.form-error {
+  display: block;
+  font-size: 0.78rem;
+  color: #e74c3c;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+  margin-top: 0.3rem;
+}
+
+/* Two-column grid for short fields */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+/* ── Barangay searchable select ───────────────────────────── */
+.barangay-search-wrapper {
+  position: relative;
+}
+
+.barangay-search-input {
+  margin-bottom: 0.5rem;
+}
+
+.barangay-select-list {
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background: var(--color-white);
+  font-family: var(--font-family);
+  font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
+  color: var(--color-text-dark);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.barangay-select-list:focus {
+  border-color: var(--color-maroon);
+  box-shadow: 0 0 0 3px rgba(117, 21, 24, 0.12);
+}
+
+.barangay-select-list.error {
+  border-color: #e74c3c;
+}
+
+.barangay-select-list option {
+  padding: 0.45rem 0.75rem;
+}
+
+/* ── Drag-and-drop zone ───────────────────────────────────── */
+.dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base);
+  background: var(--color-bg-light);
+  position: relative;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--color-maroon);
+  border-style: solid;
+  background: rgba(117, 21, 24, 0.03);
+}
+
+.dropzone.error {
+  border-color: #e74c3c;
+}
+
+.dropzone-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-maroon);
+  opacity: 0.7;
+}
+
+.dropzone-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dropzone-text {
+  font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
+  color: var(--color-text-dark);
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.dropzone-subtext {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+}
+
+.dropzone-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Photo previews ───────────────────────────────────────── */
+.photo-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.photo-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-thumb-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--border-radius-full);
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--color-white);
+  border: none;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  line-height: 1;
+  padding: 0;
+}
+
+.photo-thumb-remove:hover {
+  background: #e74c3c;
+}
+
+/* ── Private note ─────────────────────────────────────────── */
+.private-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+  background: rgba(127, 140, 141, 0.1);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--border-radius-full);
+  margin-top: 0.35rem;
+}
+
+/* ── Navigation buttons ───────────────────────────────────── */
+.form-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: clamp(1.5rem, 4vw, 2rem);
+  gap: 1rem;
+}
+
+.btn-back {
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--border-radius-full);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-dark);
+  font-family: var(--font-family);
+  font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.btn-back:hover {
+  border-color: var(--color-maroon);
+  color: var(--color-maroon);
+  background: rgba(117, 21, 24, 0.04);
+}
+
+.btn-next {
+  padding: 0.65rem 2rem;
+  border-radius: var(--border-radius-full);
+  border: none;
+  background: var(--color-maroon);
+  color: var(--color-white);
+  font-family: var(--font-family);
+  font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  letter-spacing: 0.02em;
+}
+
+.btn-next:hover {
+  background: var(--color-maroon-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(117, 21, 24, 0.3);
+}
+
+.btn-next:active {
+  transform: translateY(0);
+}
+
+.btn-next:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ============================================================
+   PROCESSING STATE
+   ============================================================ */
+.processing-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(3rem, 8vw, 5rem) 1rem;
+  text-align: center;
+  animation: fadeInUp 0.35s ease both;
+}
+
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 4px solid rgba(117, 21, 24, 0.15);
+  border-top-color: var(--color-maroon);
+  border-radius: var(--border-radius-full);
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+.processing-title {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.processing-subtitle {
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+/* ============================================================
+   SUCCESS STATE
+   ============================================================ */
+.success-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(3rem, 8vw, 5rem) 1rem;
+  text-align: center;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.success-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--border-radius-full);
+  background: rgba(39, 174, 96, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.success-checkmark {
+  width: 40px;
+  height: 40px;
+  color: var(--color-success);
+}
+
+.success-title {
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.success-subtitle {
+  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+  color: var(--color-text-light);
+  margin-bottom: 1.5rem;
+  max-width: 420px;
+}
+
+.success-ref {
+  display: inline-block;
+  background: rgba(117, 21, 24, 0.07);
+  border: 1.5px solid rgba(117, 21, 24, 0.2);
+  border-radius: var(--border-radius-md);
+  padding: 0.6rem 1.25rem;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  font-weight: 700;
+  color: var(--color-maroon);
+  letter-spacing: 0.06em;
+  margin-bottom: 2rem;
+}
+
+.success-ref-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.btn-report-another {
+  padding: 0.7rem 2rem;
+  border-radius: var(--border-radius-full);
+  border: 2px solid var(--color-maroon);
+  background: transparent;
+  color: var(--color-maroon);
+  font-family: var(--font-family);
+  font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.btn-report-another:hover {
+  background: var(--color-maroon);
+  color: var(--color-white);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — ≤768px
+   ============================================================ */
+@media (max-width: 768px) {
+  .selection-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .selection-card {
+    max-width: 100%;
+    min-height: 200px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .step-connector {
+    max-width: 40px;
+  }
+
+  .step-label {
+    font-size: 0.6rem;
+  }
+
+  .form-nav {
+    flex-direction: column-reverse;
+  }
+
+  .btn-back,
+  .btn-next {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ── Sub-label (used under a group label for paired inputs) ── */
+.form-label-sub {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Optional badge next to a label ─────────────────────── */
+.form-label-optional {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  margin-left: 0.3rem;
+}
+
+/* ============================================================
+   SUCCESS SCREEN — Reference Number Block
+   ============================================================ */
+
+/* Replaces .success-ref — full-width prominent block */
+.success-ref-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(112, 21, 21, 0.05);
+  border: 2px solid rgba(112, 21, 21, 0.2);
+  border-radius: 12px;
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2.5rem);
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.success-ref-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-light);
+}
+
+.success-ref-number {
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  font-weight: 800;
+  color: var(--color-maroon);
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.success-copy-btn {
+  padding: 0.4rem 1.1rem;
+  border-radius: 50px;
+  border: 1.5px solid rgba(112, 21, 21, 0.3);
+  background: transparent;
+  color: var(--color-maroon);
+  font-family: var(--font-family);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.success-copy-btn:hover {
+  background: var(--color-maroon);
+  color: #fff;
+}
+
+/* Save notice banner */
+.success-save-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background: rgba(243, 156, 18, 0.08);
+  border: 1.5px solid rgba(243, 156, 18, 0.35);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: clamp(0.78rem, 1.6vw, 0.85rem);
+  color: #7d5a00;
+  line-height: 1.55;
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.success-save-notice svg {
+  color: #d4860a;
+  margin-top: 1px;
+}
+
+.success-save-notice strong {
+  color: #5a3e00;
+}

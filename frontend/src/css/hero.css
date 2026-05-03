@@ -1,0 +1,309 @@
+/* ============================================================
+   HERO — TUKLAS
+   ──────────────────────────────────────────────────────────
+   SCALING STRATEGY: CSS custom property --hero-scale
+   ──────────────────────────────────────────────────────────
+   Every element inside .hero-text is sized as a multiple of
+   --hero-scale. Change ONE variable and the entire group
+   scales proportionally — title, subtitle, description,
+   gaps, buttons, all maintain their exact ratios.
+
+   --hero-scale is set to a vw value per breakpoint.
+   All children use calc(N * var(--hero-scale)).
+
+   Desktop anchor (1366px, two-column, 44vw column):
+     --hero-scale: 1vw
+     title    = 9.2 * 1vw = 9.2vw  → fills 44vw col with justify
+     subtitle = 1.35 * 1vw = 1.35vw (nowrap, justify fills col)
+     body     = 1.1 * 1vw  = 1.1vw
+     btn-h    = 3.65 * 1vw = 3.65vw
+     gap      = 1.46 * 1vw = 1.46vw
+
+   Mobile (414px, single-column, 90vw = 372.95px):
+     --hero-scale: 2.4vw
+     title    = 9.2 * 2.4vw = 22.08vw → ~91.4px glyphs × 6 × 0.68 = 372.9px ✓
+     subtitle = 1.35 * 2.4vw = 3.24vw  → 52 × 3.24 × 0.52 = 87.5vw > 90vw ✗
+     → subtitle uses min() hard cap: min(1.35em, 3.1vw)
+   ============================================================ */
+
+/* ── Section ─────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  z-index: 1;
+}
+
+/* ── Two-column layout (default ≥ 900px) ─────────────────── */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 4vw;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3vw;
+}
+
+/* ── Left column — the scaling group ─────────────────────── */
+.hero-text {
+  /* THE SINGLE SCALE KNOB — change this, everything scales */
+  --hero-scale: 1vw;
+
+  /* font-size = --hero-scale so em children resolve against it */
+  font-size: var(--hero-scale);
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 0 0 44vw;
+  width: 44vw;
+  max-width: 600px;
+  min-width: 0;
+  overflow-x: hidden;
+  /* No hardcoded height — sized by fluid children */
+}
+
+/* ── H1 — TUKLAS ─────────────────────────────────────────── */
+.hero-title {
+  font-size: 9.2em;           /* 9.2 × --hero-scale */
+  font-weight: 900;
+  line-height: 1;
+  text-align: justify;
+  text-align-last: justify;
+  width: 100%;
+  color: #fff;
+  text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.6);
+  margin: 0 0 0.35em 0;       /* gap proportional to title size */
+}
+
+/* ── H3 — Subheading ─────────────────────────────────────── */
+.hero-subtitle {
+  font-size: 1.35em;          /* 1.35 × --hero-scale */
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 1px 2px 6px rgba(0, 0, 0, 0.6);
+  margin: 0 0 0.75em 0;
+  line-height: 1.3;
+  width: 100%;
+  white-space: nowrap;        /* single line on desktop */
+  text-align: justify;
+  text-align-last: justify;
+}
+
+/* ── Paragraph ───────────────────────────────────────────── */
+.hero-description {
+  font-size: 1.1em;           /* 1.1 × --hero-scale */
+  line-height: 1.6;
+  width: 100%;
+  color: #fff;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.55);
+  text-align: justify;
+  margin: 0;
+}
+
+/* ── Button row ──────────────────────────────────────────── */
+.hero-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 1.46em;                /* 1.46 × --hero-scale */
+  margin-top: 2.2em;          /* 2.2 × --hero-scale */
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hero-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 3.65em;             /* 3.65 × --hero-scale */
+  border-radius: 50px;
+  font-size: 0.95em;          /* 0.95 × --hero-scale */
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+}
+
+.hero-button.primary {
+  background-color: #701515;
+  color: #fff;
+  border: none;
+}
+
+.hero-button.primary:hover {
+  background-color: #5a0f11;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(112, 21, 21, 0.45);
+  color: #fff;
+}
+
+.hero-button.secondary {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #701515;
+}
+
+.hero-button.secondary:hover {
+  background-color: rgba(112, 21, 21, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(112, 21, 21, 0.25);
+  color: #fff;
+}
+
+/* ── Right column — UB Seal ──────────────────────────────── */
+.hero-logo {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-logo img {
+  width: clamp(11rem, 22vw, 20rem);
+  height: auto;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.5));
+}
+
+/* ============================================================
+   TIGHT TWO-COLUMN  900px – 1099px
+   Shrink --hero-scale so the group fits the narrower column.
+   Column = 48vw. Title must fit: 9.2em × scale ≤ 48vw/6chars
+   → scale ≤ 48/(9.2×6×0.68) = 48/37.5 = 1.28vw → use 1.05vw
+   ============================================================ */
+@media (min-width: 900px) and (max-width: 1099px) {
+  .hero-text {
+    --hero-scale: 1.05vw;
+    flex: 1 1 auto;
+    width: min(48vw, 560px);
+    max-width: min(48vw, 560px);
+    overflow: hidden;
+  }
+
+  /* Hard cap: title glyphs must fit in 48vw column */
+  .hero-title {
+    font-size: min(9.2em, 8vw);
+  }
+
+  /* Hard cap: subtitle must stay on one line in 48vw */
+  .hero-subtitle {
+    font-size: min(1.35em, 1.75vw);
+    white-space: nowrap;
+  }
+
+  .hero-logo img {
+    width: clamp(9rem, 20vw, 16rem);
+  }
+}
+
+/* ============================================================
+   SINGLE COLUMN  ≤ 899px
+   Stack: seal top, text below. Column = 90vw.
+   Recalibrate --hero-scale for 90vw column.
+
+   Title must fill 90vw: 9.2em × scale × 0.68 × 6 ≈ 90vw
+   → scale ≈ 90 / (9.2 × 0.68 × 6) = 90 / 37.5 = 2.4vw
+   Subtitle hard cap: 52 × 1.35em × 2.4vw × 0.52 = 87.5vw < 90vw ✓
+   ============================================================ */
+@media (max-width: 899px) {
+  .hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 3vw 5vw;
+    gap: 2vw;
+  }
+
+  .hero-text {
+    --hero-scale: 2.4vw;
+    flex: none;
+    width: 90vw;
+    max-width: 90vw;
+    overflow: hidden;
+    order: 2;
+    align-items: flex-start;
+  }
+
+  /* Hard cap: 6 chars × font-size × 0.68 ≤ 90vw
+     → font-size ≤ 90/(6×0.68) = 22.06vw → use 21.5vw */
+  .hero-title {
+    font-size: min(9.2em, 21.5vw);
+    text-align: justify;
+    text-align-last: justify;
+  }
+
+  /* Subtitle wraps at narrow widths — left-align last line */
+  .hero-subtitle {
+    font-size: min(1.35em, 2.4vw);
+    white-space: normal;
+    text-align: justify;
+    text-align-last: left;
+  }
+
+  .hero-logo {
+    order: 1;
+    width: 90vw;
+    justify-content: center;
+  }
+
+  .hero-logo img {
+    width: clamp(9rem, 28vw, 16rem);
+  }
+}
+
+/* ============================================================
+   MOBILE  ≤ 767px
+   Narrower viewport — tighten --hero-scale.
+   At 414px: 2.4vw = 9.94px
+   title = 9.2 × 9.94 = 91.4px → 6 × 91.4 × 0.68 = 372.9px
+   90vw at 414px = 372.6px → fits ✓
+   ============================================================ */
+@media (max-width: 767px) {
+  .hero-content {
+    padding: 4vw 5vw;
+    gap: 3vw;
+  }
+
+  .hero-text {
+    --hero-scale: 2.4vw;
+  }
+
+  .hero-title {
+    font-size: min(9.2em, 21vw);
+  }
+
+  .hero-subtitle {
+    font-size: min(1.35em, 3.1vw);
+    white-space: normal;
+    text-align: justify;
+    text-align-last: left;
+  }
+
+  .hero-logo img {
+    width: clamp(7rem, 33vw, 13rem);
+  }
+}

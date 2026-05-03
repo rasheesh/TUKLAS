@@ -1,0 +1,178 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--color-maroon);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-white);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  letter-spacing: 0.25em;
+}
+
+.navbar-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-full);
+  background-color: var(--color-white);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-logo img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--border-radius-full);
+  object-fit: contain;
+}
+
+.navbar-links {
+  display: flex;
+  gap: var(--spacing-2xl);
+  list-style: none;
+  align-items: center;
+}
+
+.navbar-link {
+  color: var(--color-white);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--border-radius-full);
+}
+
+.navbar-link:hover {
+  color: var(--color-white);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.navbar-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--color-white);
+  font-weight: 700;
+  /* remove old underline */
+  border-bottom: none;
+  padding-bottom: 0.35rem;
+}
+
+/* Hamburger — hidden on desktop */
+.navbar-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.navbar-hamburger span {
+  width: 24px;
+  height: 2px;
+  background-color: var(--color-white);
+  display: block;
+  border-radius: 2px;
+  transition: all var(--transition-fast);
+}
+
+.navbar-hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(10px, 10px);
+}
+
+.navbar-hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.navbar-hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile dropdown menu */
+.navbar-menu {
+  display: none;
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background-color: var(--color-maroon);
+  flex-direction: column;
+  list-style: none;
+  padding: var(--spacing-md) 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-menu.open {
+  display: flex;
+}
+
+.navbar-menu li {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-menu .navbar-link {
+  display: block;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--border-radius-full);
+  width: fit-content;
+}
+
+/* ============================================================
+   Collapse to hamburger at 1099px — matches hero breakpoint
+   so both navbar and hero switch layouts at the same point.
+   ============================================================ */
+@media (max-width: 1099px) {
+  .navbar-container {
+    padding: 0 var(--spacing-md);
+    height: 60px;
+  }
+
+  .navbar-brand {
+    font-size: var(--font-size-lg);
+  }
+
+  .navbar-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Show hamburger, hide inline links */
+  .navbar-hamburger {
+    display: flex;
+  }
+
+  .navbar-links {
+    display: none;
+  }
+
+  .navbar-menu {
+    top: 60px;
+  }
+
+  .navbar-menu li {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
