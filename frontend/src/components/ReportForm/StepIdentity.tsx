@@ -20,7 +20,12 @@ interface StepIdentityProps {
   errors: Partial<Record<keyof IdentityData, string>>;
 }
 
-const GENDER_OPTIONS = ['Male', 'Female', 'Unknown / Undetermined'];
+/* value = DB enum value, label = display text */
+const GENDER_OPTIONS: { value: string; label: string }[] = [
+  { value: 'MALE',    label: 'Male' },
+  { value: 'FEMALE',  label: 'Female' },
+  { value: 'UNKNOWN', label: 'Unknown / Undetermined' },
+];
 
 /* Convert decimal feet string → { feet, inches } for display */
 function decimalToFeetInches(val: string): { feet: string; inches: string } {
@@ -191,7 +196,7 @@ export function StepIdentity({ type, data, onChange, errors }: StepIdentityProps
             >
               <option value="">Select gender</option>
               {GENDER_OPTIONS.map((g) => (
-                <option key={g} value={g}>{g}</option>
+                <option key={g.value} value={g.value}>{g.label}</option>
               ))}
             </select>
             {errors.gender && <span className="form-error">{errors.gender}</span>}
@@ -298,7 +303,7 @@ export function StepIdentity({ type, data, onChange, errors }: StepIdentityProps
         >
           <option value="">Select gender</option>
           {GENDER_OPTIONS.map((g) => (
-            <option key={g} value={g}>{g}</option>
+            <option key={g.value} value={g.value}>{g.label}</option>
           ))}
         </select>
         {errors.gender && <span className="form-error">{errors.gender}</span>}
