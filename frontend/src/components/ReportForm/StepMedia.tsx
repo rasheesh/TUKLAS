@@ -20,20 +20,46 @@ interface StepMediaProps {
 
 export function StepMedia({ data, onChange, errors, reportType }: StepMediaProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileTypeError, setFileTypeError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const set = (field: keyof Omit<MediaData, 'photos'>) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
       onChange({ ...data, [field]: e.target.value });
 
+  const SUPPORTED_MIME_TYPES = new Set([
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+  ]);
+
   const addFiles = (files: FileList | null) => {
     if (!files) return;
-    const accepted = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const all = Array.from(files);
+
+    /* Detect unsupported types (e.g. HEIC/HEIF from iPhone/Mac) */
+    const unsupported = all.filter(
+      (f) => f.type && !SUPPORTED_MIME_TYPES.has(f.type)
+    );
+    if (unsupported.length > 0) {
+      const names = unsupported.map((f) => f.name).join(', ');
+      /* Surface the error through the photos error field via a synthetic event.
+         We call onChange with an intentionally invalid sentinel so the parent
+         can show the validation error on the next render cycle. Instead, we
+         store the error in local state and show it inline. */
+      setFileTypeError(
+        `Unsupported file type: ${names}. Please use JPG, PNG, or WebP. ` +
+        `If you're on a Mac or iPhone, convert HEIC photos to JPG first.`
+      );
+      return;
+    }
+
+    setFileTypeError('');
+    const accepted = all.filter((f) => f.type.startsWith('image/'));
     if (accepted.length === 0) return;
     onChange({ ...data, photos: [...data.photos, ...accepted] });
   };
 
   const removePhoto = (index: number) => {
+    setFileTypeError('');
     onChange({ ...data, photos: data.photos.filter((_, i) => i !== index) });
   };
 
@@ -112,6 +138,7 @@ export function StepMedia({ data, onChange, errors, reportType }: StepMediaProps
           />
         </div>
         {errors.photos && <span className="form-error">{errors.photos}</span>}
+        {fileTypeError && <span className="form-error">{fileTypeError}</span>}
       </div>
 
       {/* ── Photo previews ── */}

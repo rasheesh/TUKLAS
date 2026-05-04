@@ -247,7 +247,25 @@ router.get('/barangays', async (req, res) => {
 });
 
 /* ── POST /api/cases — submit new report (public) ────────── */
-router.post('/', upload.array('photos', 10), async (req, res) => {
+router.post('/', (req, res, next) => {
+  upload.array('photos', 10)(req, res, (err) => {
+    if (err) {
+      /* Multer file-type rejection → return a clear 422 instead of a 500 */
+      if (err.message && err.message.startsWith('Invalid file type')) {
+        return res.status(422).json({
+          error: 'Unsupported photo format. Please upload JPG, PNG, WebP, or GIF images. ' +
+                 'If you are on a Mac or iPhone, convert HEIC photos to JPG before uploading.',
+        });
+      }
+      /* File too large */
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(422).json({ error: 'One or more photos exceed the 10 MB size limit.' });
+      }
+      return next(err);
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const {
       type, gender, barangay_name,

@@ -162,7 +162,7 @@ export default function ReportPage() {
       fd.append('first_name',  identityData.firstName);
       fd.append('last_name',   identityData.lastName);
       fd.append('nickname',    identityData.nickname);
-      fd.append('gender',      identityData.gender.toUpperCase().replace(' / ', '_').replace(' ', '_'));
+      fd.append('gender',      identityData.gender); // already a DB enum value (MALE | FEMALE | UNKNOWN)
       if (identityData.ageMin) fd.append('age_range_min', identityData.ageMin);
       if (identityData.ageMax) fd.append('age_range_max', identityData.ageMax);
       if (reportType === 'missing' && identityData.ageMin) fd.append('age_approx', identityData.ageMin);
