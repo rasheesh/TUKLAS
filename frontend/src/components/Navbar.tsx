@@ -1,14 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import '../css/navbar.css';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
 
   const navLinks = [
     { label: 'HOME', href: '/' },
@@ -16,13 +13,8 @@ export function Navbar() {
     { label: 'REPORT A CASE', href: '/report' },
     { label: 'MAP', href: '/map' },
     { label: 'ABOUT', href: '/about' },
+    { label: 'ADMIN', href: '/admin' },
   ];
-
-  /* Exact match for home, prefix match for everything else */
-  function isActive(href: string) {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  }
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -31,24 +23,14 @@ export function Navbar() {
       <div className="navbar-container">
         <div className="navbar-brand">
           <div className="navbar-logo">
-            <Image
-              src="/assets/icons/UBlogo.png"
-              alt="University of Baguio Logo"
-              width={40}
-              height={40}
-              priority
-            />
+            <img src="/assets/icons/UBlogo.png" alt="University of Baguio Logo" />
           </div>
           <span>TUKLAS</span>
         </div>
         <ul className="navbar-links">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <Link
-                href={link.href}
-                className={`navbar-link${isActive(link.href) ? ' active' : ''}`}
-                aria-current={isActive(link.href) ? 'page' : undefined}
-              >
+              <Link href={link.href} className="navbar-link">
                 {link.label}
               </Link>
             </li>
@@ -68,9 +50,8 @@ export function Navbar() {
         {navLinks.map((link) => (
           <li key={link.href}>
             <Link 
-              href={link.href}
-              className={`navbar-link${isActive(link.href) ? ' active' : ''}`}
-              aria-current={isActive(link.href) ? 'page' : undefined}
+              href={link.href} 
+              className="navbar-link"
               onClick={() => setIsOpen(false)}
             >
               {link.label}

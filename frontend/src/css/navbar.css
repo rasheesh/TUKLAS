@@ -57,25 +57,18 @@
   font-size: var(--font-size-sm);
   font-weight: 500;
   letter-spacing: 0.5px;
-  transition: color var(--transition-fast), background-color var(--transition-fast);
+  transition: color var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
-  padding: 0.35rem 0.9rem;
-  border-radius: var(--border-radius-full);
 }
 
 .navbar-link:hover {
-  color: var(--color-white);
-  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffcccc;
 }
 
 .navbar-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-white);
-  font-weight: 700;
-  /* remove old underline */
-  border-bottom: none;
-  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--color-white);
+  padding-bottom: 2px;
 }
 
 /* Hamburger — hidden on desktop */
@@ -131,13 +124,6 @@
 .navbar-menu li {
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.navbar-menu .navbar-link {
-  display: block;
-  padding: 0.4rem 0.75rem;
-  border-radius: var(--border-radius-full);
-  width: fit-content;
 }
 
 /* ============================================================

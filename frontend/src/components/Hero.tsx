@@ -1,5 +1,6 @@
+'use client';
+
 import Link from 'next/link';
-import Image from 'next/image';
 import '../css/hero.css';
 
 export function Hero() {
@@ -29,13 +30,7 @@ export function Hero() {
           </div>
         </div>
         <div className="hero-logo">
-          <Image
-            src="/assets/icons/UBlogo.png"
-            alt="University of Baguio Logo"
-            width={200}
-            height={200}
-            priority
-          />
+          <img src="/assets/icons/UBlogo.png" alt="University of Baguio Logo" />
         </div>
       </div>
     </section>

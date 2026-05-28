@@ -82,6 +82,9 @@ export const casesApi = {
   getBarangays: () =>
     request<{ barangays: { id: number; name: string }[] }>('/api/cases/barangays'),
 
+  lookupByRef: (ref: string) =>
+    request<{ case: CaseLookupResult }>(`/api/cases/lookup?ref=${encodeURIComponent(ref)}`),
+
   getPending: () =>
     request<{ cases: ApiCase[] }>('/api/cases/admin/pending'),
 
@@ -125,6 +128,19 @@ export const casesApi = {
       method: 'PATCH',
       body: JSON.stringify({ action: 'TOGGLE_PHOTO', currentPhotoHidden }),
     }),
+
+  claimCase: (id: string) =>
+    request<{ claimed: boolean; adminId: string }>(`/api/cases/admin/${id}/claim`, {
+      method: 'POST',
+    }),
+
+  releaseCase: (id: string) =>
+    request<{ released: boolean }>(`/api/cases/admin/${id}/claim`, {
+      method: 'DELETE',
+    }),
+
+  getProofSignedUrl: (id: string, path: string) =>
+    request<{ signedUrl: string }>(`/api/cases/admin/${id}/proof?path=${encodeURIComponent(path)}`),
 };
 
 /* ── Matches ──────────────────────────────────────────────── */
@@ -205,6 +221,14 @@ export interface SessionUser {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+export interface ProofDocument {
+  filename:    string;
+  path:        string;
+  mime_type:   string;
+  size_bytes:  number;
+  uploaded_at: string;
+}
+
 export interface ApiCase {
   id:             string;
   type:           'MISSING' | 'UNIDENTIFIED';
@@ -233,6 +257,15 @@ export interface ApiCase {
   /* Publish / photo visibility flags */
   published?:        boolean;
   photo_hidden?:     boolean;
+  /* Verification proof fields (admin only) */
+  proof_documents?:  ProofDocument[];
+  source_link?:      string | null;
+  trust_level?:      'HIGH' | 'MEDIUM' | 'LOW';
+  claimed_by?:       string | null;
+  claimed_at?:       string | null;
+  is_minor?:         boolean;
+  review_completed_at?: string | null;
+  consent_given?:    boolean;
   created_at:     string;
 }
 
@@ -291,4 +324,12 @@ export interface CaseFilters {
 export interface AdminCaseFilters extends CaseFilters {
   status?: string;
   search?: string;
+}
+
+export interface CaseLookupResult {
+  reference:    string;
+  status:       'PENDING' | 'VERIFIED' | 'FOUND' | 'IDENTIFIED';
+  type:         'MISSING' | 'UNIDENTIFIED';
+  name:         string | null;
+  submitted_at: string;
 }

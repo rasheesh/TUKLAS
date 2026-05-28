@@ -1,39 +1,19 @@
 /* ============================================================
    HERO — TUKLAS
-   ──────────────────────────────────────────────────────────
-   SCALING STRATEGY: CSS custom property --hero-scale
-   ──────────────────────────────────────────────────────────
-   Every element inside .hero-text is sized as a multiple of
-   --hero-scale. Change ONE variable and the entire group
-   scales proportionally — title, subtitle, description,
-   gaps, buttons, all maintain their exact ratios.
-
-   --hero-scale is set to a vw value per breakpoint.
-   All children use calc(N * var(--hero-scale)).
-
-   Desktop anchor (1366px, two-column, 44vw column):
-     --hero-scale: 1vw
-     title    = 9.2 * 1vw = 9.2vw  → fills 44vw col with justify
-     subtitle = 1.35 * 1vw = 1.35vw (nowrap, justify fills col)
-     body     = 1.1 * 1vw  = 1.1vw
-     btn-h    = 3.65 * 1vw = 3.65vw
-     gap      = 1.46 * 1vw = 1.46vw
-
-   Mobile (414px, single-column, 90vw = 372.95px):
-     --hero-scale: 2.4vw
-     title    = 9.2 * 2.4vw = 22.08vw → ~91.4px glyphs × 6 × 0.68 = 372.9px ✓
-     subtitle = 1.35 * 2.4vw = 3.24vw  → 52 × 3.24 × 0.52 = 87.5vw > 90vw ✗
-     → subtitle uses min() hard cap: min(1.35em, 3.1vw)
+   Scaling strategy: --unit-size drives everything.
+   All font sizes, spacing, and button dimensions are expressed
+   as clamp() with a vw middle value. Breakpoints only retune
+   clamp() ranges — structure never changes.
    ============================================================ */
 
-/* ── Section ─────────────────────────────────────────────── */
+/* ---------- Section ---------- */
 .hero {
   position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--color-white);
   overflow: hidden;
   background-size: cover;
   background-position: center;
@@ -48,85 +28,88 @@
   z-index: 1;
 }
 
-/* ── Two-column layout (default ≥ 900px) ─────────────────── */
+/* ---------- Two-column row ---------- */
 .hero-content {
   position: relative;
   z-index: 2;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 4vw;
+  padding: clamp(1rem, 2vh, 2rem) clamp(1.5rem, 4vw, 4rem);
   box-sizing: border-box;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 3vw;
+  gap: clamp(1rem, 3vw, 3rem);
 }
 
-/* ── Left column — the scaling group ─────────────────────── */
+/* ---------- Left column ----------
+   --unit-size is the single scale knob.
+   font-size on .hero-text = --unit-size so every em child
+   scales in lockstep when only --unit-size changes.
+   Desktop anchor: 1vw at 1366px = 13.66px
+     title    9.2em → ~125px  fills min(44vw, 600px) with justify
+     subtitle 1.35em → ~18.4px
+     body     1.1em  → ~15px
+     btn-h    3.65em → ~50px
+*/
 .hero-text {
-  /* THE SINGLE SCALE KNOB — change this, everything scales */
-  --hero-scale: 1vw;
-
-  /* font-size = --hero-scale so em children resolve against it */
-  font-size: var(--hero-scale);
-
+  --unit-size: clamp(0.75rem, 1vw, 1rem);
+  font-size: var(--unit-size);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  flex: 0 0 44vw;
-  width: 44vw;
-  max-width: 600px;
+  flex: 0 0 min(44vw, 600px);
+  width: min(44vw, 600px);
   min-width: 0;
   overflow-x: hidden;
-  /* No hardcoded height — sized by fluid children */
 }
 
-/* ── H1 — TUKLAS ─────────────────────────────────────────── */
+/* H1 */
 .hero-title {
-  font-size: 9.2em;           /* 9.2 × --hero-scale */
+  font-size: 9.2em;
   font-weight: 900;
   line-height: 1;
   text-align: justify;
   text-align-last: justify;
   width: 100%;
-  color: #fff;
+  color: var(--color-white);
   text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.6);
-  margin: 0 0 0.35em 0;       /* gap proportional to title size */
+  margin: 0 0 0.35em 0;
 }
 
-/* ── H3 — Subheading ─────────────────────────────────────── */
+/* H3 */
 .hero-subtitle {
-  font-size: 1.35em;          /* 1.35 × --hero-scale */
+  font-size: 1.35em;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-white);
   text-shadow: 1px 2px 6px rgba(0, 0, 0, 0.6);
   margin: 0 0 0.75em 0;
   line-height: 1.3;
   width: 100%;
-  white-space: nowrap;        /* single line on desktop */
+  white-space: nowrap;
   text-align: justify;
   text-align-last: justify;
 }
 
-/* ── Paragraph ───────────────────────────────────────────── */
+/* Paragraph */
 .hero-description {
-  font-size: 1.1em;           /* 1.1 × --hero-scale */
+  font-size: 1.1em;
   line-height: 1.6;
   width: 100%;
-  color: #fff;
+  color: var(--color-white);
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.55);
   text-align: justify;
   margin: 0;
 }
 
-/* ── Button row ──────────────────────────────────────────── */
+/* Buttons */
 .hero-buttons {
   display: flex;
   flex-direction: row;
-  gap: 1.46em;                /* 1.46 × --hero-scale */
-  margin-top: 2.2em;          /* 2.2 × --hero-scale */
+  gap: 1.46em;
+  margin-top: 2.2em;
   flex-wrap: nowrap;
   width: 100%;
   box-sizing: border-box;
@@ -136,11 +119,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 0;
-  min-width: 0;
-  height: 3.65em;             /* 3.65 × --hero-scale */
+  flex: 1 1 0;          /* share space equally — never overflow */
+  min-width: 0;         /* allow shrinking below content size */
+  height: 3.65em;
   border-radius: 50px;
-  font-size: 0.95em;          /* 0.95 × --hero-scale */
+  font-size: 0.95em;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -152,7 +135,7 @@
 
 .hero-button.primary {
   background-color: #701515;
-  color: #fff;
+  color: var(--color-white);
   border: none;
 }
 
@@ -160,12 +143,12 @@
   background-color: #5a0f11;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(112, 21, 21, 0.45);
-  color: #fff;
+  color: var(--color-white);
 }
 
 .hero-button.secondary {
   background: transparent;
-  color: #fff;
+  color: var(--color-white);
   border: 2px solid #701515;
 }
 
@@ -173,10 +156,10 @@
   background-color: rgba(112, 21, 21, 0.18);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(112, 21, 21, 0.25);
-  color: #fff;
+  color: var(--color-white);
 }
 
-/* ── Right column — UB Seal ──────────────────────────────── */
+/* ---------- Right column — UB Seal ---------- */
 .hero-logo {
   flex: 0 0 auto;
   display: flex;
@@ -191,74 +174,136 @@
 }
 
 /* ============================================================
-   TIGHT TWO-COLUMN  900px – 1099px
-   Shrink --hero-scale so the group fits the narrower column.
-   Column = 48vw. Title must fit: 9.2em × scale ≤ 48vw/6chars
-   → scale ≤ 48/(9.2×6×0.68) = 48/37.5 = 1.28vw → use 1.05vw
+   MESSY ZONE  768px – 1280px
+   Two-column still active but viewport is tight.
+   Make text column fluid and retune --unit-size + hard caps.
+
+   At 824px: padding=66px, gap=24.7px, seal=181px
+   Available text width ≈ 824 - 66 - 25 - 181 = 552px = 67vw
+   Use 52vw as text column (leaves room for seal).
+   Title hard cap: 52vw ÷ 6 chars = 8.67vw per char → font-size ≤ 8.67vw
+   Subtitle hard cap: 52 chars × font-size × 0.52 ≤ 52vw
+     → font-size ≤ 52vw / 27.04 = 1.92vw
    ============================================================ */
-@media (min-width: 900px) and (max-width: 1099px) {
+@media (min-width: 768px) and (max-width: 1280px) {
   .hero-text {
-    --hero-scale: 1.05vw;
+    --unit-size: clamp(0.7rem, 1.05vw, 1rem);
     flex: 1 1 auto;
-    width: min(48vw, 560px);
-    max-width: min(48vw, 560px);
+    width: min(52vw, 600px);
+    max-width: min(52vw, 600px);
     overflow: hidden;
   }
 
-  /* Hard cap: title glyphs must fit in 48vw column */
+  /* Hard cap: font-size × 6 chars must fit in the fluid column */
   .hero-title {
-    font-size: min(9.2em, 8vw);
+    font-size: min(9.2em, 8.5vw);
   }
 
-  /* Hard cap: subtitle must stay on one line in 48vw */
+  /* Hard cap: 52 chars must fit on one line */
   .hero-subtitle {
-    font-size: min(1.35em, 1.75vw);
+    font-size: min(1.35em, 1.85vw);
     white-space: nowrap;
   }
 
   .hero-logo img {
-    width: clamp(9rem, 20vw, 16rem);
+    width: clamp(9rem, 20vw, 18rem);
   }
 }
 
 /* ============================================================
-   SINGLE COLUMN  ≤ 899px
-   Stack: seal top, text below. Column = 90vw.
-   Recalibrate --hero-scale for 90vw column.
+   PORTRAIT TABLET  768px – 1024px  orientation: portrait
+   Switch to single column. Only --unit-size and layout
+   direction change — all em values stay identical.
 
-   Title must fill 90vw: 9.2em × scale × 0.68 × 6 ≈ 90vw
-   → scale ≈ 90 / (9.2 × 0.68 × 6) = 90 / 37.5 = 2.4vw
-   Subtitle hard cap: 52 × 1.35em × 2.4vw × 0.52 = 87.5vw < 90vw ✓
+   New column = 90vw. To keep same visual ratio:
+   desktop ratio = title_em / col_vw = 9.2 / 44 = 0.2091
+   new root = 90vw × 0.2091 / 9.2 = 2.045vw
    ============================================================ */
-@media (max-width: 899px) {
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .hero-content {
     flex-direction: column;
     align-items: flex-start;
-    padding: 3vw 5vw;
-    gap: 2vw;
+    padding: clamp(1.5rem, 3vh, 3rem) clamp(1rem, 5vw, 3rem);
+    gap: clamp(1rem, 2vh, 2rem);
   }
 
   .hero-text {
-    --hero-scale: 2.4vw;
+    /* Tightest constraint = title glyph width:
+       max font-size = 691px / (6 chars × 0.68 ratio) = 169.4px
+       --unit-size   = 169.4px / 9.2em = 18.4px = 2.396vw at 768px
+       Use 2.3vw for sub-pixel safety margin. */
+    --unit-size: clamp(1rem, 2.3vw, 1.6rem);
     flex: none;
     width: 90vw;
     max-width: 90vw;
     overflow: hidden;
     order: 2;
-    align-items: flex-start;
   }
 
-  /* Hard cap: 6 chars × font-size × 0.68 ≤ 90vw
-     → font-size ≤ 90/(6×0.68) = 22.06vw → use 21.5vw */
-  .hero-title {
-    font-size: min(9.2em, 21.5vw);
+  /* Subtitle fits on one line at this unit-size — keep nowrap + justify */
+  .hero-subtitle {
+    white-space: nowrap;
     text-align: justify;
     text-align-last: justify;
   }
 
-  /* Subtitle wraps at narrow widths — left-align last line */
+  /* Hard cap on title: 6 chars × font-size × 0.68 ≤ 90vw
+     → font-size ≤ 90vw / (6 × 0.68) = 90vw / 4.08 = 22.06vw
+     Use 21.5vw for safety. */
+  .hero-title {
+    font-size: min(9.2em, 21.5vw);
+  }
+
+  .hero-logo {
+    order: 1;
+    width: 90vw;
+    justify-content: center;
+  }
+
+  /* Logo: proportional to the text block.
+     At 768px text block height ≈ 400px. Logo should be ~35% of that.
+     35vw at 768px = 269px — visually balanced with the large title. */
+  .hero-logo img {
+    width: clamp(10rem, 35vw, 18rem);
+  }
+}
+
+/* ============================================================
+   MOBILE  ≤ 767px
+   Hard constraints — no clamp floors that can override vw:
+   - Title: min() caps it absolutely to 22vw so 6 chars × 22vw
+     × 0.68 char-ratio = 89.8vw — fits in 90vw column always.
+   - Subtitle: font-size capped to 3.2vw so 52 chars × 3.2vw
+     × 0.52 = 86.5vw — fits in 90vw column always.
+   - --unit-size drives description, buttons, spacing.
+   ============================================================ */
+@media (max-width: 767px) {
+  .hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: clamp(0.75rem, 2vh, 1.5rem) clamp(1rem, 5vw, 2rem);
+    gap: clamp(0.5rem, 1.5vh, 1rem);
+  }
+
+  .hero-text {
+    --unit-size: clamp(0.55rem, 2.4vw, 0.9rem);
+    flex: none;
+    width: 90vw;
+    max-width: 90vw;
+    overflow: hidden;
+    order: 2;
+  }
+
+  /* Hard cap: never wider than column regardless of em cascade */
+  .hero-title {
+    font-size: min(8.8em, 21vw);
+    text-align: justify;
+    text-align-last: justify;
+  }
+
+  /* Subtitle: hard cap so 52 chars always fit in 90vw */
   .hero-subtitle {
-    font-size: min(1.35em, 2.4vw);
+    font-size: min(1.35em, 3.1vw);
     white-space: normal;
     text-align: justify;
     text-align-last: left;
@@ -268,39 +313,6 @@
     order: 1;
     width: 90vw;
     justify-content: center;
-  }
-
-  .hero-logo img {
-    width: clamp(9rem, 28vw, 16rem);
-  }
-}
-
-/* ============================================================
-   MOBILE  ≤ 767px
-   Narrower viewport — tighten --hero-scale.
-   At 414px: 2.4vw = 9.94px
-   title = 9.2 × 9.94 = 91.4px → 6 × 91.4 × 0.68 = 372.9px
-   90vw at 414px = 372.6px → fits ✓
-   ============================================================ */
-@media (max-width: 767px) {
-  .hero-content {
-    padding: 4vw 5vw;
-    gap: 3vw;
-  }
-
-  .hero-text {
-    --hero-scale: 2.4vw;
-  }
-
-  .hero-title {
-    font-size: min(9.2em, 21vw);
-  }
-
-  .hero-subtitle {
-    font-size: min(1.35em, 3.1vw);
-    white-space: normal;
-    text-align: justify;
-    text-align-last: left;
   }
 
   .hero-logo img {

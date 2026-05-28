@@ -15,8 +15,11 @@ export interface MapCase {
   lng: number;
   barangay: string;
   date: string;
-  age: number;
-  gender: string;
+  age: number | null;
+  age_range_min: number | null;
+  age_range_max: number | null;
+  gender: string;           // display form: 'Male' | 'Female' | 'Unknown'
+  gender_raw: 'MALE' | 'FEMALE' | 'UNKNOWN';
   location: string;
   description: string;
   imageUrl?: string;
@@ -214,22 +217,25 @@ export function MapContainer() {
       const coords = resolveCoords(c.coords, c.barangay_name ?? null);
       if (!coords) return null;
       return {
-        id:          c.id,
-        name:        c.full_name ?? (c.type === 'UNIDENTIFIED' ? 'Unidentified Person' : 'Unknown'),
-        status:      (c.status === 'FOUND' || c.status === 'IDENTIFIED'
-                       ? 'found'
-                       : c.type === 'UNIDENTIFIED'
-                         ? 'unidentified'
-                         : 'missing') as CaseStatus,
-        lat:         coords.lat,
-        lng:         coords.lng,
-        barangay:    c.barangay_name ?? '',
-        date:        c.incident_date ?? c.created_at,
-        age:         c.age_approx ?? 0,
-        gender:      c.gender === 'FEMALE' ? 'Female' : c.gender === 'MALE' ? 'Male' : 'Unknown',
-        location:    c.location_text ?? '',
-        description: c.description ?? '',
-        imageUrl:    c.photo_url ?? undefined,
+        id:            c.id,
+        name:          c.full_name ?? (c.type === 'UNIDENTIFIED' ? 'Unidentified Person' : 'Unknown'),
+        status:        (c.status === 'FOUND' || c.status === 'IDENTIFIED'
+                         ? 'found'
+                         : c.type === 'UNIDENTIFIED'
+                           ? 'unidentified'
+                           : 'missing') as CaseStatus,
+        lat:           coords.lat,
+        lng:           coords.lng,
+        barangay:      c.barangay_name ?? '',
+        date:          c.incident_date ?? c.created_at,
+        age:           c.age_approx ?? null,
+        age_range_min: c.age_range_min ?? null,
+        age_range_max: c.age_range_max ?? null,
+        gender:        c.gender === 'FEMALE' ? 'Female' : c.gender === 'MALE' ? 'Male' : 'Unknown',
+        gender_raw:    c.gender,
+        location:      c.location_text ?? '',
+        description:   c.description ?? '',
+        imageUrl:      c.photo_url ?? undefined,
       } satisfies MapCase;
     })
     .filter((c): c is NonNullable<typeof c> => c !== null) as MapCase[];

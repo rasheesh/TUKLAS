@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Montserrat } from 'next/font/google';
 import '../css/globals.css';
-import { AuthProvider } from '../context/AuthContext';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -11,13 +10,9 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'TUKLAS | Baguio City Missing Persons Information System',
+  title: 'TUKLAS - Missing and Unidentified Persons Information System',
   description:
-    'TUKLAS is a centralized platform for the reporting, searching, and identification of missing and unidentified persons in Baguio City, Philippines.',
-  icons: {
-    icon: '/assets/icons/UBlogo.png',
-    apple: '/assets/icons/UBlogo.png',
-  },
+    'TUKLAS is a centralized platform for reporting and searching missing and unidentified persons in Baguio City.',
 };
 
 export default function RootLayout({
@@ -27,11 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={montserrat.variable}>
-      <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

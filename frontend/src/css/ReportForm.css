@@ -107,13 +107,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 2rem;
   transition: background var(--transition-base);
-  color: var(--color-maroon);
-}
-
-.selection-card-icon svg {
-  width: 30px;
-  height: 30px;
 }
 
 .selection-card:hover .selection-card-icon {
@@ -431,19 +426,9 @@
 }
 
 .dropzone-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-maroon);
-  opacity: 0.7;
-}
-
-.dropzone-icon svg {
-  width: 100%;
-  height: 100%;
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
 }
 
 .dropzone-text {
@@ -547,9 +532,6 @@
   font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
   font-weight: 600;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
   transition:
     border-color var(--transition-fast),
     color var(--transition-fast),
@@ -572,9 +554,6 @@
   font-size: clamp(0.85rem, 1.8vw, 0.9375rem);
   font-weight: 700;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
   transition:
     background var(--transition-fast),
     transform var(--transition-fast),
@@ -661,8 +640,7 @@
 }
 
 .success-checkmark {
-  width: 40px;
-  height: 40px;
+  font-size: 2.5rem;
   color: var(--color-success);
 }
 
@@ -796,105 +774,4 @@
     width: 100%;
     text-align: center;
   }
-}
-
-/* ── Sub-label (used under a group label for paired inputs) ── */
-.form-label-sub {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-text-light);
-  margin-bottom: 0.35rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* ── Optional badge next to a label ─────────────────────── */
-.form-label-optional {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-light);
-  margin-left: 0.3rem;
-}
-
-/* ============================================================
-   SUCCESS SCREEN — Reference Number Block
-   ============================================================ */
-
-/* Replaces .success-ref — full-width prominent block */
-.success-ref-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  background: rgba(112, 21, 21, 0.05);
-  border: 2px solid rgba(112, 21, 21, 0.2);
-  border-radius: 12px;
-  padding: clamp(1rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2.5rem);
-  margin-bottom: 1rem;
-  width: 100%;
-  max-width: 420px;
-}
-
-.success-ref-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-text-light);
-}
-
-.success-ref-number {
-  font-size: clamp(1.4rem, 4vw, 1.9rem);
-  font-weight: 800;
-  color: var(--color-maroon);
-  letter-spacing: 0.12em;
-  line-height: 1;
-}
-
-.success-copy-btn {
-  padding: 0.4rem 1.1rem;
-  border-radius: 50px;
-  border: 1.5px solid rgba(112, 21, 21, 0.3);
-  background: transparent;
-  color: var(--color-maroon);
-  font-family: var(--font-family);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 150ms ease, color 150ms ease;
-}
-
-.success-copy-btn:hover {
-  background: var(--color-maroon);
-  color: #fff;
-}
-
-/* Save notice banner */
-.success-save-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  background: rgba(243, 156, 18, 0.08);
-  border: 1.5px solid rgba(243, 156, 18, 0.35);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-  font-size: clamp(0.78rem, 1.6vw, 0.85rem);
-  color: #7d5a00;
-  line-height: 1.55;
-  max-width: 480px;
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.success-save-notice svg {
-  color: #d4860a;
-  margin-top: 1px;
-}
-
-.success-save-notice strong {
-  color: #5a3e00;
 }

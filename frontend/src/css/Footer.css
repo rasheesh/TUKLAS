@@ -44,9 +44,6 @@
 .footer-brand-logo img {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 3px;
   object-fit: contain;
 }
 

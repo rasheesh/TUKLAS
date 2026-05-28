@@ -20,6 +20,7 @@ type CaseType   = 'missing' | 'unidentified';
 
 interface VerifiedCase {
   id: string;
+  reference: string;
   name: string;
   type: CaseType;
   gender: string;
@@ -871,6 +872,13 @@ export default function AdminPage() {
           reporterName:    c.reporter_name ?? '—',
           reporterContact: c.reporter_contact ?? '—',
           photos:          c.photo_url ? [c.photo_url] : [],
+          /* New proof/verification fields */
+          trustLevel:      (c.trust_level as 'HIGH' | 'MEDIUM' | 'LOW') ?? 'LOW',
+          sourceLink:      c.source_link ?? null,
+          proofDocuments:  c.proof_documents ?? [],
+          claimedBy:       c.claimed_by ?? null,
+          claimedAt:       c.claimed_at ?? null,
+          isMinor:         c.is_minor ?? false,
         }));
         setQueue(mapped);
       })
@@ -884,6 +892,7 @@ export default function AdminPage() {
       .then(r => {
         const mapped: VerifiedCase[] = r.cases.map(c => ({
           id:              c.id,
+          reference:       c.case_reference ?? '',
           name:            c.full_name ?? 'Unknown',
           type:            c.type.toLowerCase() as 'missing' | 'unidentified',
           gender:          c.gender === 'MALE' ? 'Male' : c.gender === 'FEMALE' ? 'Female' : 'Unknown',
@@ -962,6 +971,7 @@ export default function AdminPage() {
         // Add to verified cases list immediately
         const newVerified: VerifiedCase = {
           id:              updatedCase.id,
+          reference:       updatedCase.case_reference ?? '',
           name:            updatedCase.full_name ?? 'Unknown',
           type:            updatedCase.type.toLowerCase() as 'missing' | 'unidentified',
           gender:          updatedCase.gender === 'MALE' ? 'Male' : updatedCase.gender === 'FEMALE' ? 'Female' : 'Unknown',
@@ -995,6 +1005,30 @@ export default function AdminPage() {
     casesApi.updateStatus(id, 'REJECTED')
       .then(() => setQueue(q => q.filter(c => c.id !== id)))
       .catch(err => showToast(`Rejection failed: ${err.message}`, 'info'));
+  }
+
+  /* Claim — lock the case for review by this admin */
+  function handleClaim(id: string) {
+    casesApi.claimCase(id)
+      .then(({ adminId }) => {
+        setQueue(q => q.map(c =>
+          c.id === id ? { ...c, claimedBy: adminId, claimedAt: new Date().toISOString() } : c
+        ));
+        showToast('Case claimed — others will see it is under review.', 'info');
+      })
+      .catch(err => showToast(`Claim failed: ${err.message}`, 'info'));
+  }
+
+  /* Release — free the claim so others can review */
+  function handleRelease(id: string) {
+    casesApi.releaseCase(id)
+      .then(() => {
+        setQueue(q => q.map(c =>
+          c.id === id ? { ...c, claimedBy: null, claimedAt: null } : c
+        ));
+        showToast('Claim released.', 'info');
+      })
+      .catch(err => showToast(`Release failed: ${err.message}`, 'info'));
   }
 
   /* Publish — make case visible in public view */
@@ -1494,8 +1528,11 @@ export default function AdminPage() {
               </div>
               <VerificationTable
                 cases={queue.slice(0, 3)}
+                currentAdminId={session?.id ?? ''}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                onClaim={handleClaim}
+                onRelease={handleRelease}
               />
             </>
           )}
@@ -1511,8 +1548,11 @@ export default function AdminPage() {
               </div>
               <VerificationTable
                 cases={queue}
+                currentAdminId={session?.id ?? ''}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                onClaim={handleClaim}
+                onRelease={handleRelease}
               />
             </>
           )}
@@ -1634,6 +1674,7 @@ export default function AdminPage() {
                       <table className="vtable" aria-label="Verified cases">
                         <thead>
                           <tr>
+                            <th>Ref No.</th>
                             <th>Name</th>
                             <th>Type</th>
                             <th>Age · Gender</th>
@@ -1647,6 +1688,9 @@ export default function AdminPage() {
                         <tbody>
                           {filtered.map(c => (
                             <tr key={c.id}>
+                              <td style={{ whiteSpace: 'nowrap', fontWeight: 700, fontSize: '0.78rem', color: '#701515', letterSpacing: '0.05em' }}>
+                                {c.reference || '—'}
+                              </td>
                               <td style={{ fontWeight: 600 }}>{c.name}</td>
                               <td><span className={`vtable-type-pill ${c.type}`}>{c.type}</span></td>
                               <td style={{ fontSize: '0.78rem', color: 'var(--color-text-light)' }}>{c.age} · {c.gender}</td>

@@ -8,27 +8,36 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 const router = Router();
 
 /* ── Multer — memory storage with file size + MIME type guard ── */
-const ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/gif',
+const PHOTO_MIME_TYPES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
 ]);
 
+const PROOF_MIME_TYPES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+/* Photo-only upload (existing photos field) */
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },   // 10 MB per file
   fileFilter(_req, file, cb) {
-    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      cb(null, true);
+    if (file.fieldname === 'proof_documents') {
+      cb(null, PROOF_MIME_TYPES.has(file.mimetype));
     } else {
-      cb(new Error(`Invalid file type "${file.mimetype}". Only JPEG, PNG, WebP, and GIF images are accepted.`));
+      if (PHOTO_MIME_TYPES.has(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Invalid file type "${file.mimetype}". Only JPEG, PNG, WebP, and GIF images are accepted.`));
+      }
     }
   },
 });
 
-const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'case-photos';
+const BUCKET       = process.env.SUPABASE_STORAGE_BUCKET || 'case-photos';
+const PROOF_BUCKET = process.env.SUPABASE_PROOF_BUCKET   || 'case-proofs';
 
 /* ── Field length limits ─────────────────────────────────── */
 const LIMITS = {
@@ -87,10 +96,14 @@ const FULL_ADMIN_SELECT = CORE_SELECT + `,
   case_reference, height_ft,
   resolution_notes, identified_name, resolved_at,
   published, photo_hidden,
-  verified_by, verified_at
+  verified_by, verified_at,
+  proof_documents, source_link, trust_level,
+  claimed_by, claimed_at,
+  consent_given, is_minor,
+  review_completed_at
 `;
 
-/* Public select — same as full admin minus verified_by/verified_at */
+/* Public select — same as full admin minus admin-only fields */
 const FULL_PUBLIC_SELECT = CORE_SELECT + `,
   case_reference, height_ft,
   resolution_notes, identified_name, resolved_at,
@@ -246,20 +259,75 @@ router.get('/barangays', async (req, res) => {
   }
 });
 
+/* ── GET /api/cases/lookup — case status by reference number ── */
+router.get('/lookup', async (req, res) => {
+  const { ref } = req.query;
+
+  if (!ref || typeof ref !== 'string') {
+    return res.status(400).json({ error: 'Reference number is required.' });
+  }
+
+  const cleanRef = ref.trim().toUpperCase();
+
+  /* Basic sanity check — prevents DB hammering with garbage input */
+  if (!cleanRef.startsWith('TKL-') || cleanRef.length > 30) {
+    return res.status(400).json({ error: 'Invalid reference number format. Reference numbers begin with TKL-.' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('cases')
+      .select('case_reference, status, type, full_name, is_minor, created_at')
+      .eq('case_reference', cleanRef)
+      .limit(1);
+
+    if (error) {
+      const isColErr = error.code === '42703'
+        || (error.message && error.message.toLowerCase().includes('column'));
+      if (isColErr) {
+        console.warn('[GET /cases/lookup] case_reference column missing — run add_case_reference.sql migration.');
+        return res.status(404).json({ error: 'No case found with this reference number. Please check and try again.' });
+      }
+      throw error;
+    }
+
+    const found = data?.[0];
+    if (!found) {
+      return res.status(404).json({ error: 'No case found with this reference number. Please check and try again.' });
+    }
+
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      case: {
+        reference:    found.case_reference,
+        status:       found.status,
+        type:         found.type,
+        /* Omit name for minors and unidentified persons */
+        name:         (found.is_minor || found.type === 'UNIDENTIFIED') ? null : found.full_name,
+        submitted_at: found.created_at,
+      },
+    });
+  } catch (err) {
+    console.error('[GET /cases/lookup]', err.message);
+    res.status(500).json({ error: 'Failed to look up case. Please try again.' });
+  }
+});
+
 /* ── POST /api/cases — submit new report (public) ────────── */
 router.post('/', (req, res, next) => {
-  upload.array('photos', 10)(req, res, (err) => {
+  upload.fields([
+    { name: 'photos',          maxCount: 10 },
+    { name: 'proof_documents', maxCount: 5  },
+  ])(req, res, (err) => {
     if (err) {
-      /* Multer file-type rejection → return a clear 422 instead of a 500 */
       if (err.message && err.message.startsWith('Invalid file type')) {
         return res.status(422).json({
           error: 'Unsupported photo format. Please upload JPG, PNG, WebP, or GIF images. ' +
                  'If you are on a Mac or iPhone, convert HEIC photos to JPG before uploading.',
         });
       }
-      /* File too large */
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(422).json({ error: 'One or more photos exceed the 10 MB size limit.' });
+        return res.status(422).json({ error: 'One or more files exceed the 10 MB size limit.' });
       }
       return next(err);
     }
@@ -275,6 +343,8 @@ router.post('/', (req, res, next) => {
       description, location_text, incident_date, incident_time,
       lat, lng,
       reporter_first_name, reporter_last_name, reporter_contact,
+      source_link,
+      consent_given,
     } = req.body;
 
     /* Required field validation */
@@ -333,6 +403,55 @@ router.post('/', (req, res, next) => {
       LIMITS.reporter_name
     );
 
+    /* Validate DPA consent — required for all submissions */
+    if (consent_given !== 'true' && consent_given !== true) {
+      return res.status(422).json({
+        error: 'You must consent to the Data Privacy Act provisions before submitting.',
+      });
+    }
+
+    /* Validate proof requirement — need either a file or a source link */
+    const proofFiles  = req.files?.proof_documents ?? [];
+    const hasProof    = proofFiles.length > 0;
+    const hasSource   = !!(source_link && source_link.trim());
+    if (!hasProof && !hasSource) {
+      return res.status(422).json({
+        error: 'Please attach at least one supporting document or provide a verified source link.',
+      });
+    }
+
+    /* Validate source_link format when provided */
+    if (hasSource) {
+      try {
+        const url = new URL(source_link.trim());
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Bad protocol');
+      } catch {
+        return res.status(422).json({ error: 'Source link must be a valid URL (http or https).' });
+      }
+    }
+
+    /* Compute trust level:
+       HIGH   — official document types (PDF) or known-gov filename keywords
+       MEDIUM — image proof or source link only
+       LOW    — should not reach here (blocked above), but kept as safe default */
+    const OFFICIAL_KEYWORDS = /police|blotter|barangay|certification|cert|dswd|nbi|pnp/i;
+    let trustLevel = 'LOW';
+    if (hasProof) {
+      const hasOfficialDoc = proofFiles.some(
+        f => f.mimetype === 'application/pdf' || OFFICIAL_KEYWORDS.test(f.originalname)
+      );
+      trustLevel = hasOfficialDoc ? 'HIGH' : 'MEDIUM';
+    } else if (hasSource) {
+      trustLevel = 'MEDIUM';
+    }
+
+    /* Minor detection — DB trigger also sets this, but set it here for
+       immediate use in photo_hidden logic before insert returns. */
+    const ageApproxNum  = age_approx  ? parseInt(age_approx)  : null;
+    const ageRangeMaxNum = age_range_max ? parseInt(age_range_max) : null;
+    const isMinor = (ageApproxNum !== null && ageApproxNum < 18)
+                 || (ageRangeMaxNum !== null && ageRangeMaxNum < 18);
+
     /* Populate reported_by if the request comes from an authenticated user */
     let reportedBy = null;
     const cookieToken  = req.cookies?.tuklas_session;
@@ -353,9 +472,9 @@ router.post('/', (req, res, next) => {
       barangay_id:      barangay.id,
       full_name:        fullName,
       nickname:         sanitizeText(nickname, LIMITS.nickname),
-      age_approx:       age_approx ? parseInt(age_approx) : null,
+      age_approx:       ageApproxNum,
       age_range_min:    age_range_min ? parseInt(age_range_min) : null,
-      age_range_max:    age_range_max ? parseInt(age_range_max) : null,
+      age_range_max:    ageRangeMaxNum,
       description:      sanitizeText(description, LIMITS.description),
       location_text:    sanitizeText(location_text, LIMITS.location_text),
       incident_date,
@@ -365,6 +484,15 @@ router.post('/', (req, res, next) => {
       reporter_contact: sanitizeText(reporter_contact, LIMITS.reporter_contact),
       reported_by:      reportedBy,
       status:           'PENDING',
+      /* Proof and verification */
+      source_link:      hasSource ? source_link.trim().slice(0, 2048) : null,
+      trust_level:      trustLevel,
+      is_minor:         isMinor,
+      photo_hidden:     isMinor,    // minor photos hidden by default
+      /* DPA consent */
+      consent_given:    true,
+      consent_at:       new Date().toISOString(),
+      consent_ip:       req.ip ?? null,
     };
     /* Only include height_ft when a value was actually submitted */
     if (height_ft) insertPayload.height_ft = parseFloat(height_ft);
@@ -429,9 +557,9 @@ router.post('/', (req, res, next) => {
     }
 
     /* Upload photos */
-    const files = req.files ?? [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const photoFiles = req.files?.photos ?? [];
+    for (let i = 0; i < photoFiles.length; i++) {
+      const file = photoFiles[i];
       const ext  = file.originalname.split('.').pop();
       const path = `${newCase.id}/${Date.now()}-${i}.${ext}`;
 
@@ -451,6 +579,43 @@ router.post('/', (req, res, next) => {
         url:        publicUrl,
         is_primary: i === 0,
       });
+    }
+
+    /* Upload proof documents to private bucket */
+    if (proofFiles.length > 0) {
+      const uploadedProofs = [];
+      for (let i = 0; i < proofFiles.length; i++) {
+        const file    = proofFiles[i];
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path    = `${newCase.id}/${Date.now()}-${i}-${safeName}`;
+
+        const { error: proofUploadErr } = await supabase.storage
+          .from(PROOF_BUCKET)
+          .upload(path, file.buffer, {
+            contentType: file.mimetype,
+            upsert:      false,
+          });
+
+        if (proofUploadErr) {
+          console.error('[Proof upload]', proofUploadErr.message);
+          continue;
+        }
+
+        uploadedProofs.push({
+          filename:    file.originalname,
+          path,
+          mime_type:   file.mimetype,
+          size_bytes:  file.size,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+
+      if (uploadedProofs.length > 0) {
+        await supabase
+          .from('cases')
+          .update({ proof_documents: uploadedProofs })
+          .eq('id', newCase.id);
+      }
     }
 
     /* Use the DB-generated reference (TKL-YYYY-NNNNN from case_reference_seq).
@@ -701,6 +866,121 @@ router.patch('/admin/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[PATCH /admin/cases/:id]', err.message);
     res.status(500).json({ error: 'Failed to update case.' });
+  }
+});
+
+/* ── POST /api/cases/admin/:id/claim — claim a pending case ── */
+router.post('/admin/:id/claim', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    /* Check if already claimed by someone else */
+    const { data: existing, error: fetchErr } = await supabase
+      .from('cases')
+      .select('claimed_by, claimed_at, full_name')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr) throw fetchErr;
+
+    if (existing.claimed_by && existing.claimed_by !== req.user.id) {
+      return res.status(409).json({
+        error: 'This case is already being reviewed by another admin.',
+        claimedBy: existing.claimed_by,
+        claimedAt: existing.claimed_at,
+      });
+    }
+
+    const { error: updateErr } = await supabase
+      .from('cases')
+      .update({ claimed_by: req.user.id, claimed_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (updateErr) throw updateErr;
+
+    await logAction({
+      adminId:     req.user.id,
+      action:      'CASE_CLAIMED',
+      targetId:    id,
+      targetType:  'case',
+      description: `Case "${existing.full_name ?? id}" claimed for review by ${req.user.full_name}`,
+      ipAddress:   req.ip,
+    }).catch(() => {});
+
+    res.json({ claimed: true, adminId: req.user.id });
+  } catch (err) {
+    console.error('[POST /admin/cases/:id/claim]', err.message);
+    res.status(500).json({ error: 'Failed to claim case.' });
+  }
+});
+
+/* ── DELETE /api/cases/admin/:id/claim — release claim ──── */
+router.delete('/admin/:id/claim', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase
+      .from('cases')
+      .update({ claimed_by: null, claimed_at: null })
+      .eq('id', id)
+      .eq('claimed_by', req.user.id);  // only the claimant can release
+
+    if (error) throw error;
+    res.json({ released: true });
+  } catch (err) {
+    console.error('[DELETE /admin/cases/:id/claim]', err.message);
+    res.status(500).json({ error: 'Failed to release claim.' });
+  }
+});
+
+/* ── GET /api/cases/admin/:id/proof — signed URL for proof doc ── */
+/*
+ * Returns a short-lived (5 min) signed URL for a single proof document.
+ * Every access is logged to proof_doc_access_log for DPA audit trail.
+ */
+router.get('/admin/:id/proof', requireAuth, async (req, res) => {
+  const { id }   = req.params;
+  const { path } = req.query;
+
+  if (!path || typeof path !== 'string') {
+    return res.status(400).json({ error: 'Missing proof document path.' });
+  }
+
+  try {
+    /* Verify the path belongs to this case (security check) */
+    const { data: caseRow, error: fetchErr } = await supabase
+      .from('cases')
+      .select('id, proof_documents')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !caseRow) {
+      return res.status(404).json({ error: 'Case not found.' });
+    }
+
+    const docs = Array.isArray(caseRow.proof_documents) ? caseRow.proof_documents : [];
+    const docExists = docs.some(d => d.path === path);
+    if (!docExists) {
+      return res.status(403).json({ error: 'Proof document not associated with this case.' });
+    }
+
+    /* Generate a signed URL valid for 5 minutes */
+    const { data: signedData, error: signErr } = await supabase.storage
+      .from(PROOF_BUCKET)
+      .createSignedUrl(path, 300);
+
+    if (signErr) throw signErr;
+
+    /* Log the access for DPA audit trail */
+    await supabase.from('proof_doc_access_log').insert({
+      case_id:    id,
+      admin_id:   req.user.id,
+      doc_url:    path,
+      ip_address: req.ip ?? null,
+    }).catch(err => console.error('[ProofAccessLog]', err.message));
+
+    res.json({ signedUrl: signedData.signedUrl });
+  } catch (err) {
+    console.error('[GET /admin/cases/:id/proof]', err.message);
+    res.status(500).json({ error: 'Failed to generate proof URL.' });
   }
 });
 

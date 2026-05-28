@@ -1,13 +1,15 @@
 import { Navbar } from '@/src/components/Navbar';
 import { Hero } from '@/src/components/Hero';
-import { Footer } from '@/src/components/Footer';
+import { Stats } from '@/src/components/Stats';
+import { RecentCases } from '@/src/components/RecentCases';
 
 export default function Home() {
   return (
     <>
       <Navbar />
       <Hero />
-      <Footer />
+      <Stats />
+      <RecentCases />
     </>
   );
 }

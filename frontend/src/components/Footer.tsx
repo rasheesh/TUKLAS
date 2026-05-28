@@ -92,6 +92,26 @@ export function Footer() {
 
       </div>
 
+      {/* ── DPA Compliance Notice ── */}
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        padding: '1rem 0',
+        fontSize: '0.75rem',
+        lineHeight: 1.65,
+        color: 'rgba(255,255,255,0.55)',
+        textAlign: 'center',
+        maxWidth: 780,
+        margin: '0 auto',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
+      }}>
+        TUKLAS adheres to the provisions of the <strong style={{ color: 'rgba(255,255,255,0.75)' }}>Data Privacy Act of 2012 (RA 10173)</strong> to
+        ensure the protection and responsible handling of information. Sensitive information involving
+        minors, ongoing investigations, or family privacy requests may be restricted, anonymized, or
+        withheld from public access upon the discretion of authorized administrators and law enforcement
+        personnel. All submitted reports shall undergo verification before publication.
+      </div>
+
       {/* ── Bottom bar ── */}
       <div className="footer-bottom">
         <span className="footer-copyright">
