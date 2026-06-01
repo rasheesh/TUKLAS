@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { BarangayCombobox } from './BarangayCombobox';
 
 export interface IncidentData {
   barangay: string;
@@ -154,17 +154,9 @@ const BARANGAYS: string[] = [
 ];
 
 export function StepIncident({ type, data, onChange, errors }: StepIncidentProps) {
-  const [barangaySearch, setBarangaySearch] = useState('');
-
   const set = (field: keyof IncidentData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       onChange({ ...data, [field]: e.target.value });
-
-  const filteredBarangays = barangaySearch.trim()
-    ? BARANGAYS.filter((b) =>
-        b.toLowerCase().includes(barangaySearch.toLowerCase())
-      )
-    : BARANGAYS;
 
   const locationLabel = type === 'missing' ? 'Last Seen' : 'Found';
   const dateLabel = type === 'missing' ? 'Date Last Seen' : 'Date Found';
@@ -181,35 +173,16 @@ export function StepIncident({ type, data, onChange, errors }: StepIncidentProps
 
       {/* Barangay */}
       <div className="form-group">
-        <label className="form-label" htmlFor="incident-barangay-search">
+        <label className="form-label" htmlFor="incident-barangay">
           {locationLabel} Barangay <span className="required-star">*</span>
         </label>
-        <div className="barangay-search-wrapper">
-          <input
-            id="incident-barangay-search"
-            type="text"
-            className="form-input barangay-search-input"
-            value={barangaySearch}
-            onChange={(e) => setBarangaySearch(e.target.value)}
-            placeholder="Type to filter barangays..."
-            autoComplete="off"
-          />
-          <select
-            id="incident-barangay"
-            className={`barangay-select-list${errors.barangay ? ' error' : ''}`}
-            size={5}
-            value={data.barangay}
-            onChange={set('barangay')}
-            aria-label="Select barangay"
-          >
-            <option value="">— Select a barangay —</option>
-            {filteredBarangays.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BarangayCombobox
+          id="incident-barangay"
+          options={BARANGAYS}
+          value={data.barangay}
+          onChange={(barangay) => onChange({ ...data, barangay })}
+          error={!!errors.barangay}
+        />
         {data.barangay && (
           <span className="form-hint">Selected: {data.barangay}</span>
         )}

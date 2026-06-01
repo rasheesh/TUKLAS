@@ -2,9 +2,10 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: var(--color-maroon);
+  background: linear-gradient(180deg, var(--color-maroon-light) 0%, var(--color-maroon) 100%);
   backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 12px rgba(90, 15, 17, 0.25);
 }
 
 .navbar-container {
@@ -20,47 +21,51 @@
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   color: var(--color-white);
   font-size: var(--font-size-xl);
-  font-weight: 600;
-  letter-spacing: 0.25em;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-decoration: none;
 }
 
 .navbar-logo {
   width: 40px;
   height: 40px;
-  border-radius: var(--border-radius-full);
-  background-color: var(--color-white);
-  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform var(--transition-fast);
+}
+
+.navbar-brand:hover .navbar-logo {
+  transform: scale(1.05);
 }
 
 .navbar-logo img {
   width: 100%;
   height: 100%;
-  border-radius: var(--border-radius-full);
   object-fit: contain;
+  /* lift the logo off the maroon background */
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
 
 .navbar-links {
   display: flex;
-  gap: var(--spacing-2xl);
+  gap: var(--spacing-xs);
   list-style: none;
   align-items: center;
 }
 
 .navbar-link {
-  color: var(--color-white);
+  color: rgba(255, 255, 255, 0.82);
   font-size: var(--font-size-sm);
   font-weight: 500;
   letter-spacing: 0.5px;
   transition: color var(--transition-fast), background-color var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
-  padding: 0.35rem 0.9rem;
+  padding: 0.45rem 1rem;
   border-radius: var(--border-radius-full);
 }
 
@@ -70,12 +75,11 @@
 }
 
 .navbar-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-white);
+  background-color: var(--color-white);
+  color: var(--color-maroon);
   font-weight: 700;
   /* remove old underline */
   border-bottom: none;
-  padding-bottom: 0.35rem;
 }
 
 /* Hamburger — hidden on desktop */

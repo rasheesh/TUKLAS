@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SidePanel } from './SidePanel';
 import { useCases } from '../../hooks/useCases';
 
@@ -208,8 +208,10 @@ export function MapContainer() {
 
   const { cases: rawCases } = useCases();
 
-  /* Map API shape → MapCase, using barangay fallback for missing coords */
-  const cases = rawCases
+  /* Map API shape → MapCase, using barangay fallback for missing coords.
+     Memoised on rawCases so the reference stays stable across renders — this
+     keeps the marker-sync effect from thrashing on every render. */
+  const cases = useMemo<MapCase[]>(() => rawCases
     .map(c => {
       const coords = resolveCoords(c.coords, c.barangay_name ?? null);
       if (!coords) return null;
@@ -232,9 +234,10 @@ export function MapContainer() {
         imageUrl:    c.photo_url ?? undefined,
       } satisfies MapCase;
     })
-    .filter((c): c is NonNullable<typeof c> => c !== null) as MapCase[];
+    .filter((c): c is NonNullable<typeof c> => c !== null) as MapCase[], [rawCases]);
 
   const [activeCase,    setActiveCase]    = useState<MapCase | null>(null);
+  const [mapReady,      setMapReady]      = useState(false);
   const [visibility,    setVisibility]    = useState<Record<CaseStatus, boolean>>({
     missing: true, unidentified: true, found: true,
   });
@@ -289,10 +292,15 @@ export function MapContainer() {
       }).addTo(map);
 
       leafletMapRef.current = map;
+      /* Signal readiness via state so the marker-sync effect re-runs now that
+         the (asynchronously created) map actually exists. Without this, markers
+         added before init finishes are silently dropped. */
+      if (!cancelled) setMapReady(true);
     });
 
     return () => {
       cancelled = true;
+      setMapReady(false);
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
@@ -337,7 +345,7 @@ export function MapContainer() {
         markersRef.current.set(c.id, marker);
       });
     });
-  }, [cases, visibility]);
+  }, [cases, visibility, mapReady]);
 
   /* ── Pan to active case ── */
   useEffect(() => {

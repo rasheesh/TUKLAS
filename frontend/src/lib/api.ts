@@ -82,6 +82,11 @@ export const casesApi = {
   getBarangays: () =>
     request<{ barangays: { id: number; name: string }[] }>('/api/cases/barangays'),
 
+  trackByReference: (reference: string) =>
+    request<{ report: TrackedReport }>(
+      `/api/cases/track/${encodeURIComponent(reference.trim().toUpperCase())}`
+    ),
+
   getPending: () =>
     request<{ cases: ApiCase[] }>('/api/cases/admin/pending'),
 
@@ -112,6 +117,14 @@ export const casesApi = {
     request<{ case: ApiCase }>(`/api/cases/admin/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ status, resolution }),
+    }),
+
+  /* Reject a pending report. The record is kept (status → REJECTED) with the
+     reason so the reporter can read it on the tracking page. */
+  reject: (id: string, rejectionReason: string) =>
+    request<{ message: string; id: string }>(`/api/cases/admin/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'REJECTED', rejectionReason }),
     }),
 
   publish: (id: string) =>
@@ -208,7 +221,7 @@ export interface SessionUser {
 export interface ApiCase {
   id:             string;
   type:           'MISSING' | 'UNIDENTIFIED';
-  status:         'PENDING' | 'VERIFIED' | 'FOUND' | 'IDENTIFIED';
+  status:         'PENDING' | 'VERIFIED' | 'FOUND' | 'IDENTIFIED' | 'REJECTED';
   case_reference?: string | null;
   full_name:      string | null;
   nickname:       string | null;
@@ -234,6 +247,23 @@ export interface ApiCase {
   published?:        boolean;
   photo_hidden?:     boolean;
   created_at:     string;
+}
+
+export interface TrackedReport {
+  reference:        string;
+  type:             'MISSING' | 'UNIDENTIFIED';
+  status:           'PENDING' | 'VERIFIED' | 'FOUND' | 'IDENTIFIED' | 'REJECTED';
+  full_name:        string | null;
+  nickname:         string | null;
+  barangay_name:    string | null;
+  location_text:    string | null;
+  incident_date:    string | null;
+  created_at:       string | null;
+  verified_at:      string | null;
+  resolved_at:      string | null;
+  identified_name:  string | null;
+  rejection_reason: string | null;
+  rejected_at:      string | null;
 }
 
 export interface ApiProfile {

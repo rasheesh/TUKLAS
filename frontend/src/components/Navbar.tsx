@@ -14,6 +14,7 @@ export function Navbar() {
     { label: 'HOME', href: '/' },
     { label: 'BROWSE CASES', href: '/cases' },
     { label: 'REPORT A CASE', href: '/report' },
+    { label: 'TRACK REPORT', href: '/track' },
     { label: 'MAP', href: '/map' },
     { label: 'ABOUT', href: '/about' },
   ];

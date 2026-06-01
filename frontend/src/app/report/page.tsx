@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navbar } from '@/src/components/Navbar';
 import { Footer } from '@/src/components/Footer';
+import { AnnouncementBanner } from '@/src/components/AnnouncementBanner';
 import { StepIdentity, IdentityData } from '../../components/ReportForm/StepIdentity';
 import { StepIncident, IncidentData } from '../../components/ReportForm/StepIncident';
 import { StepMedia, MediaData } from '../../components/ReportForm/StepMedia';
 import { casesApi, ApiError } from '../../lib/api';
+import {
+  saveDraft, loadDraft, clearDraft, draftHasContent, type ReportDraft,
+} from '../../lib/reportDraft';
 import '../../css/ReportForm.css';
 
 // ── Types ──────────────────────────────────────────────────
@@ -33,9 +37,13 @@ const EMPTY_INCIDENT: IncidentData = {
 
 const EMPTY_MEDIA: MediaData = {
   photos: [],
+  documents: [],
+  sourceLinks: [],
   reporterFirstName: '',
   reporterLastName: '',
   reporterContact: '',
+  privacyConsent: false,
+  accuracyDeclaration: false,
 };
 
 // ── Step meta ──────────────────────────────────────────────
@@ -60,7 +68,57 @@ export default function ReportPage() {
 
   const [identityErrors, setIdentityErrors] = useState<Partial<Record<keyof IdentityData, string>>>({});
   const [incidentErrors, setIncidentErrors] = useState<Partial<Record<keyof IncidentData, string>>>({});
-  const [mediaErrors, setMediaErrors] = useState<Partial<Record<keyof MediaData, string>>>({});
+  const [mediaErrors, setMediaErrors] = useState<Partial<Record<keyof MediaData | 'proof', string>>>({});
+
+  // ── Draft resume / auto-save ─────────────────────────────
+  /* A saved draft found on mount, offered to the user via a banner. */
+  const [resumeDraft, setResumeDraft] = useState<ReportDraft | null>(null);
+
+  /* On mount, look for an unfinished report worth restoring. */
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draftHasContent(draft)) setResumeDraft(draft);
+  }, []);
+
+  /* Auto-save text fields whenever the user is inside the form steps. */
+  useEffect(() => {
+    if (reportType && (step === 1 || step === 2 || step === 3)) {
+      saveDraft({
+        savedAt: Date.now(),
+        reportType,
+        step,
+        identity: identityData,
+        incident: incidentData,
+        media: {
+          sourceLinks: mediaData.sourceLinks,
+          reporterFirstName: mediaData.reporterFirstName,
+          reporterLastName: mediaData.reporterLastName,
+          reporterContact: mediaData.reporterContact,
+        },
+      });
+    }
+  }, [reportType, step, identityData, incidentData, mediaData]);
+
+  const handleResumeDraft = () => {
+    if (!resumeDraft) return;
+    setReportType(resumeDraft.reportType);
+    setIdentityData(resumeDraft.identity);
+    setIncidentData(resumeDraft.incident);
+    setMediaData({
+      ...EMPTY_MEDIA,   // photos & documents can't be restored — start empty
+      sourceLinks: resumeDraft.media.sourceLinks ?? [],
+      reporterFirstName: resumeDraft.media.reporterFirstName ?? '',
+      reporterLastName: resumeDraft.media.reporterLastName ?? '',
+      reporterContact: resumeDraft.media.reporterContact ?? '',
+    });
+    setStep(resumeDraft.step);
+    setResumeDraft(null);
+  };
+
+  const handleDiscardDraft = () => {
+    clearDraft();
+    setResumeDraft(null);
+  };
 
   // ── Selection ────────────────────────────────────────────
   const handleSelectType = (type: ReportType) => {
@@ -119,13 +177,24 @@ export default function ReportPage() {
   };
 
   const validateStep3 = (): boolean => {
-    const errs: Partial<Record<keyof MediaData, string>> = {};
+    const errs: Partial<Record<keyof MediaData | 'proof', string>> = {};
     if (mediaData.photos.length === 0) errs.photos = 'At least one photo is required.';
+    /* Supporting proof required for ALL reports — at least one document or source link */
+    if (mediaData.documents.length === 0 && mediaData.sourceLinks.length === 0) {
+      errs.proof = 'At least one supporting document or source link is required.';
+    }
     /* Reporter name + contact required for missing reports only */
     if (reportType === 'missing') {
       if (!mediaData.reporterFirstName.trim()) errs.reporterFirstName = 'First name is required.';
       if (!mediaData.reporterLastName.trim())  errs.reporterLastName  = 'Last name is required.';
       if (!mediaData.reporterContact.trim())   errs.reporterContact   = 'Contact information is required.';
+    }
+    /* Legal consent — both acknowledgments are mandatory */
+    if (!mediaData.privacyConsent) {
+      errs.privacyConsent = 'You must consent to data processing to submit a report.';
+    }
+    if (!mediaData.accuracyDeclaration) {
+      errs.accuracyDeclaration = 'Please confirm the information is true and submitted in good faith.';
     }
     setMediaErrors(errs);
     return Object.keys(errs).length === 0;
@@ -180,10 +249,28 @@ export default function ReportPage() {
       fd.append('reporter_last_name',  mediaData.reporterLastName);
       fd.append('reporter_contact',    mediaData.reporterContact);
 
+      /* Legal consent (RA 10173 + good-faith declaration) */
+      fd.append('data_privacy_consent',  String(mediaData.privacyConsent));
+      fd.append('accuracy_declaration',  String(mediaData.accuracyDeclaration));
+
       /* Photos */
       mediaData.photos.forEach(file => fd.append('photos', file));
 
+      /* Supporting documents — each file paired with its type via index key */
+      mediaData.documents.forEach((doc, i) => {
+        fd.append('documents', doc.file);
+        fd.append(`document_type_${i}`, doc.type);
+      });
+
+      /* Source links — JSON array of { url, link_type } */
+      if (mediaData.sourceLinks.length > 0) {
+        fd.append('source_links', JSON.stringify(
+          mediaData.sourceLinks.map(l => ({ url: l.url, link_type: l.type }))
+        ));
+      }
+
       const { reference } = await casesApi.submitReport(fd);
+      clearDraft();   // submitted — no draft to resume
       setCaseRef(reference);
       setStep('success');
     } catch (err) {
@@ -196,6 +283,8 @@ export default function ReportPage() {
   };
 
   const handleReportAnother = () => {
+    clearDraft();
+    setResumeDraft(null);
     setReportType(null);
     setIdentityData(EMPTY_IDENTITY);
     setIncidentData(EMPTY_INCIDENT);
@@ -227,7 +316,11 @@ export default function ReportPage() {
     <div className="report-page">
       <Navbar />
 
-      <main className="report-content">        {/* ── Heading ── */}
+      <main className="report-content">
+        {/* ── Mandated credibility notice (dismissible) ── */}
+        <AnnouncementBanner inReport />
+
+        {/* ── Heading ── */}
         <div className="report-heading">
           <h1>Report a Case</h1>
           <p>Help us find missing persons and identify unidentified individuals in Baguio City.</p>
@@ -238,6 +331,32 @@ export default function ReportPage() {
         ══════════════════════════════════════════════════ */}
         {step === 'selection' && (
           <div className={`selection-screen${slideOut ? ' slide-out' : ''}`}>
+            {/* ── Resume unfinished report ── */}
+            {resumeDraft && (
+              <div className="draft-resume-banner" role="region" aria-label="Unfinished report">
+                <div className="draft-resume-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" />
+                  </svg>
+                </div>
+                <div className="draft-resume-text">
+                  <strong>You have an unfinished report.</strong>
+                  <span>
+                    Continue where you left off ({resumeDraft.reportType === 'missing' ? 'Missing Person' : 'Unidentified Person'}).
+                    You&apos;ll need to re-attach any photos or documents.
+                  </span>
+                </div>
+                <div className="draft-resume-actions">
+                  <button type="button" className="draft-resume-btn" onClick={handleResumeDraft}>
+                    Resume
+                  </button>
+                  <button type="button" className="draft-discard-btn" onClick={handleDiscardDraft}>
+                    Discard
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="selection-cards">
               {/* Missing person card */}
               <button
@@ -346,13 +465,21 @@ export default function ReportPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="btn-report-another"
-              onClick={handleReportAnother}
-            >
-              Report Another Case
-            </button>
+            <div className="success-actions">
+              <a
+                className="btn-track-report"
+                href={`/track?ref=${encodeURIComponent(caseRef)}`}
+              >
+                Track This Report
+              </a>
+              <button
+                type="button"
+                className="btn-report-another"
+                onClick={handleReportAnother}
+              >
+                Report Another Case
+              </button>
+            </div>
           </div>
         )}
 

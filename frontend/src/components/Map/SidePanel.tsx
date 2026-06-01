@@ -1,6 +1,6 @@
 'use client';
 
-import { MapCase } from './MapContainer';
+import { MapCase, CaseStatus } from './MapContainer';
 import { PersonIcon } from '../PersonIcon';
 
 interface SidePanelProps {
@@ -29,20 +29,99 @@ function formatDate(iso: string) {
   });
 }
 
-export function SidePanel({ activeCase, allCases, onClose, onSelectCase }: SidePanelProps) {
-  /* Opposite type for matching */
-  const oppositeType = activeCase?.status === 'missing' ? 'unidentified' : 'missing';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-  const matches = activeCase
+interface ScoredMatch extends MapCase {
+  dist:       number;
+  score:      number;
+  confidence: 'High' | 'Medium' | 'Low';
+  reasons:    string[];
+}
+
+/* ── Multi-factor match scoring ───────────────────────────────
+   A missing-person report is matched against unidentified-person
+   reports (and vice-versa) using gender, age, distance, and date —
+   not location alone. Biologically/chronologically impossible pairs
+   are excluded outright; the rest are scored 0–100 and ranked.       */
+function scoreMatch(active: MapCase, cand: MapCase): ScoredMatch | null {
+  /* Identify which side is the missing report and which is the find */
+  const missing      = active.status === 'missing' ? active : cand;
+  const unidentified = active.status === 'missing' ? cand   : active;
+
+  const lastSeen = new Date(missing.date).getTime();
+  const found    = new Date(unidentified.date).getTime();
+  const datesKnown = !Number.isNaN(lastSeen) && !Number.isNaN(found);
+
+  /* ── Hard implausibility gates ── */
+  /* Can't be found before going missing (2-day grace for data-entry slack) */
+  if (datesKnown && found < lastSeen - 2 * DAY_MS) return null;
+  /* Different known gender — a missing person's gender doesn't change */
+  if (active.gender !== 'Unknown' && cand.gender !== 'Unknown'
+      && active.gender !== cand.gender) return null;
+  /* Wildly different ages (both known) — allow 30 yrs for estimation error */
+  if (active.age > 0 && cand.age > 0
+      && Math.abs(active.age - cand.age) > 30) return null;
+
+  const reasons: string[] = [];
+  let score = 0;
+
+  /* ── Gender (30) ── */
+  if (active.gender !== 'Unknown' && cand.gender !== 'Unknown') {
+    score += 30;                                   // equal (mismatches already gated out)
+    reasons.push(`Same gender (${cand.gender})`);
+  } else {
+    score += 12;                                   // unknown on one side — partial
+  }
+
+  /* ── Distance (25) ── */
+  const dist = haversine(active.lat, active.lng, cand.lat, cand.lng);
+  if      (dist <= 1)  score += 25;
+  else if (dist <= 3)  score += 18;
+  else if (dist <= 5)  score += 10;
+  else if (dist <= 10) score += 4;
+  reasons.push(`${dist.toFixed(1)} km away`);
+
+  /* ── Age (30) ── */
+  if (active.age > 0 && cand.age > 0) {
+    const diff = Math.abs(active.age - cand.age);
+    if      (diff <= 2)  { score += 30; reasons.push('Age within 2 yrs'); }
+    else if (diff <= 5)  { score += 22; reasons.push('Age within 5 yrs'); }
+    else if (diff <= 10) { score += 12; reasons.push('Age within 10 yrs'); }
+    else if (diff <= 15) { score += 5;  }
+  } else {
+    score += 12;                                   // unknown age — partial
+  }
+
+  /* ── Date proximity (15) ── */
+  if (datesKnown) {
+    const gapDays = Math.abs(found - lastSeen) / DAY_MS;
+    if      (gapDays <= 30)  { score += 15; reasons.push(`Found ${Math.round(gapDays)}d after last seen`); }
+    else if (gapDays <= 180) { score += 10; }
+    else if (gapDays <= 365) { score += 5;  }
+    else                     { score += 2;  }
+  }
+
+  const confidence: ScoredMatch['confidence'] =
+    score >= 70 ? 'High' : score >= 50 ? 'Medium' : 'Low';
+
+  return { ...cand, dist, score, confidence, reasons };
+}
+
+export function SidePanel({ activeCase, allCases, onClose, onSelectCase }: SidePanelProps) {
+  /* Match a missing report against finds and vice-versa; nothing to match for
+     already-resolved ("found") cases. */
+  const oppositeType: CaseStatus | null =
+    activeCase?.status === 'missing'      ? 'unidentified'
+    : activeCase?.status === 'unidentified' ? 'missing'
+    : null;
+
+  const matches: ScoredMatch[] = activeCase && oppositeType
     ? allCases
         .filter(c => c.id !== activeCase.id && c.status === oppositeType)
-        .map(c => ({
-          ...c,
-          dist: haversine(activeCase.lat, activeCase.lng, c.lat, c.lng),
-        }))
-        .filter(c => c.dist <= 5)
-        .sort((a, b) => a.dist - b.dist)
-        .slice(0, 3)
+        .map(c => scoreMatch(activeCase, c))
+        .filter((m): m is ScoredMatch => m !== null && m.score >= 35)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
     : [];
 
   return (
@@ -128,32 +207,65 @@ export function SidePanel({ activeCase, allCases, onClose, onSelectCase }: SideP
             {/* Potential matches */}
             <div className="panel-matches">
               <div className="panel-matches-title">
-                Potential Matches within 5km
+                Potential Matches
               </div>
               {matches.length > 0 ? (
-                matches.map(m => (
-                  <button
-                    key={m.id}
-                    className="panel-match-card"
-                    onClick={() => onSelectCase(m)}
-                    aria-label={`View match: ${m.name}`}
-                  >
-                    <PersonIcon
-                      gender={m.gender}
-                      status={m.status}
-                      size={44}
-                      style={{ borderRadius: '8px', flexShrink: 0 }}
-                    />
-                    <div className="panel-match-info">
-                      <div className="panel-match-name">{m.name}</div>
-                      <div className="panel-match-meta">{m.barangay} · {m.gender}</div>
-                    </div>
-                    <span className="panel-match-dist">{m.dist.toFixed(1)} km</span>
-                  </button>
-                ))
+                matches.map(m => {
+                  const badgeColor =
+                    m.confidence === 'High'   ? '#27ae60'
+                    : m.confidence === 'Medium' ? '#f39c12'
+                    : '#95a5a6';
+                  return (
+                    <button
+                      key={m.id}
+                      className="panel-match-card"
+                      onClick={() => onSelectCase(m)}
+                      aria-label={`View match: ${m.name} — ${m.confidence} confidence`}
+                    >
+                      <PersonIcon
+                        gender={m.gender}
+                        status={m.status}
+                        size={44}
+                        style={{ borderRadius: '8px', flexShrink: 0 }}
+                      />
+                      <div className="panel-match-info">
+                        <div className="panel-match-name">{m.name}</div>
+                        <div className="panel-match-meta">
+                          {m.barangay} · {m.gender}{m.age > 0 ? ` · ${m.age} yrs` : ''}
+                        </div>
+                        <div
+                          className="panel-match-reasons"
+                          style={{
+                            fontSize: '0.68rem',
+                            color: 'var(--color-text-light, #7f8c8d)',
+                            marginTop: '2px',
+                            lineHeight: 1.35,
+                          }}
+                        >
+                          {m.reasons.join(' · ')}
+                        </div>
+                      </div>
+                      <span
+                        className="panel-match-dist"
+                        style={{
+                          background: `${badgeColor}1a`,
+                          color: badgeColor,
+                          fontWeight: 700,
+                          padding: '2px 7px',
+                          borderRadius: '6px',
+                          fontSize: '0.66rem',
+                          whiteSpace: 'nowrap',
+                          alignSelf: 'flex-start',
+                        }}
+                      >
+                        {m.confidence}
+                      </span>
+                    </button>
+                  );
+                })
               ) : (
                 <div className="panel-no-matches">
-                  No potential matches found within 5km radius.
+                  No likely matches found.
                 </div>
               )}
             </div>

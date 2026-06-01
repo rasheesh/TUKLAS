@@ -376,6 +376,160 @@
   border: 1.5px solid #fff;
 }
 
+/* ── Notification bell + dropdown ── */
+.admin-notif {
+  position: relative;
+}
+
+.admin-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #e74c3c;
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 340px;
+  max-width: calc(100vw - 2rem);
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+  z-index: 1000;
+  overflow: hidden;
+  animation: fadeIn 150ms ease both;
+}
+
+.admin-notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.admin-notif-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  background: #f4f5f7;
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.admin-notif-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.admin-notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  color: #b0b3b8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: none;
+  border-bottom: 1px solid #f4f5f7;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: background 120ms ease;
+}
+
+.admin-notif-item:last-child {
+  border-bottom: none;
+}
+
+.admin-notif-item:hover {
+  background: #f9fafb;
+}
+
+.admin-notif-item.unread {
+  background: rgba(112, 21, 21, 0.035);
+}
+
+.admin-notif-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-notif-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.admin-notif-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-notif-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.admin-notif-detail {
+  font-size: 0.74rem;
+  color: var(--color-text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-notif-time {
+  font-size: 0.68rem;
+  color: #b0b3b8;
+  margin-top: 2px;
+}
+
+.admin-notif-unread-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e74c3c;
+  margin-top: 6px;
+}
+
 .admin-logout-btn {
   display: flex;
   align-items: center;
@@ -626,6 +780,19 @@
   border-collapse: collapse;
 }
 
+/* Scrollable table body with a pinned header — keeps every row reachable
+   inside the dashboard instead of letting long tables overflow off-screen. */
+.vtable-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 340px);
+  min-height: 180px;
+}
+.vtable-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 .vtable th {
   padding: 0.65rem 1rem;
   text-align: left;
@@ -715,6 +882,35 @@
   background: #e74c3c;
   color: #fff;
   border-color: #e74c3c;
+}
+
+/* Rejection-reason options */
+.reject-reason-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.83rem;
+  line-height: 1.4;
+  color: var(--color-text-dark);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.reject-reason-option:hover {
+  border-color: rgba(231,76,60,0.4);
+  background: rgba(231,76,60,0.03);
+}
+.reject-reason-option.selected {
+  border-color: #c0392b;
+  background: rgba(231,76,60,0.06);
+}
+.reject-reason-option input[type="radio"] {
+  margin-top: 0.15rem;
+  accent-color: #c0392b;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* Pagination */
