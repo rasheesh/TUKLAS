@@ -20,6 +20,7 @@ type CaseType   = 'missing' | 'unidentified';
 
 interface VerifiedCase {
   id: string;
+  reference: string;         // TKL-YYYY-NNNNN
   name: string;
   type: CaseType;
   gender: string;
@@ -258,6 +259,12 @@ function VerifiedCaseModal({
 
             {/* Case info grid */}
             <div className="admin-modal-details" style={{ marginTop: '0.75rem' }}>
+              <div className="admin-modal-field">
+                <span className="admin-modal-field-label">Reference No.</span>
+                <span className="admin-modal-field-value" style={{ fontWeight: 700, color: '#701515', letterSpacing: '0.06em' }}>
+                  {c.reference || '—'}
+                </span>
+              </div>
               <div className="admin-modal-field">
                 <span className="admin-modal-field-label">Date Reported</span>
                 <span className="admin-modal-field-value">{c.dateReported}</span>
@@ -920,6 +927,7 @@ export default function AdminPage() {
       .then(r => {
         const mapped: VerifiedCase[] = r.cases.map(c => ({
           id:              c.id,
+          reference:       c.case_reference ?? '',
           name:            c.full_name ?? 'Unknown',
           type:            c.type.toLowerCase() as 'missing' | 'unidentified',
           gender:          c.gender === 'MALE' ? 'Male' : c.gender === 'FEMALE' ? 'Female' : 'Unknown',
@@ -1099,6 +1107,7 @@ export default function AdminPage() {
         // Add to verified cases list immediately
         const newVerified: VerifiedCase = {
           id:              updatedCase.id,
+          reference:       updatedCase.case_reference ?? '',
           name:            updatedCase.full_name ?? 'Unknown',
           type:            updatedCase.type.toLowerCase() as 'missing' | 'unidentified',
           gender:          updatedCase.gender === 'MALE' ? 'Male' : updatedCase.gender === 'FEMALE' ? 'Female' : 'Unknown',
@@ -1943,6 +1952,7 @@ export default function AdminPage() {
                       <table className="vtable" aria-label="Verified cases">
                         <thead>
                           <tr>
+                            <th>Ref No.</th>
                             <th>Name</th>
                             <th>Type</th>
                             <th>Age · Gender</th>
@@ -1956,6 +1966,9 @@ export default function AdminPage() {
                         <tbody>
                           {filtered.map(c => (
                             <tr key={c.id}>
+                              <td style={{ whiteSpace: 'nowrap', fontWeight: 700, fontSize: '0.78rem', color: '#701515', letterSpacing: '0.05em' }}>
+                                {c.reference || '—'}
+                              </td>
                               <td style={{ fontWeight: 600 }}>{c.name}</td>
                               <td><span className={`vtable-type-pill ${c.type}`}>{c.type}</span></td>
                               <td style={{ fontSize: '0.78rem', color: 'var(--color-text-light)' }}>{c.age} · {c.gender}</td>
