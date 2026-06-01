@@ -12,17 +12,42 @@ import matchesRouter  from './routes/matches.js';
 
 const app = express();
 
-/* ── CORS origin ──────────────────────────────────────────── */
+/* ── CORS origins ─────────────────────────────────────────── */
 /*
- * FRONTEND_URL must be set in production env vars on Vercel.
+ * FRONTEND_URL must be set in production env vars on Vercel. It may
+ * be a single origin or a comma-separated list (e.g. a production URL
+ * plus a custom domain). Each entry must include the scheme, e.g.
+ *   https://tuklas-mu.vercel.app,https://tuklas.app
+ *
  * We log a warning but do NOT call process.exit() — that crashes
  * Vercel serverless cold starts. The app will still start; CORS
  * will simply reject requests from unknown origins.
  */
-const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))   // strip trailing slash
+  .filter(Boolean);
+
 if (!process.env.FRONTEND_URL && process.env.NODE_ENV === 'production') {
   console.warn('[WARN] FRONTEND_URL is not set in production. CORS will use localhost fallback.');
 }
+
+/*
+ * Vercel assigns preview deployments URLs like
+ *   https://tuklas-git-<branch>-<scope>.vercel.app
+ * Allow any *.vercel.app subdomain so previews work without having to
+ * pin every generated URL in FRONTEND_URL.
+ */
+const VERCEL_PREVIEW = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;                       // same-origin / curl / server-to-server
+  if (allowedOrigins.includes(origin)) return true;
+  return VERCEL_PREVIEW.test(origin);
+}
+
+/* The single primary origin, used for static contexts (CSP, fallback). */
+const primaryOrigin = allowedOrigins[0];
 
 /* ── CORS preflight — MUST be first, before Helmet ───────── */
 /*
@@ -30,14 +55,19 @@ if (!process.env.FRONTEND_URL && process.env.NODE_ENV === 'production') {
  * The browser sends an OPTIONS preflight before every cross-origin
  * request. This handler responds immediately with the correct CORS
  * headers before any other middleware runs, preventing Helmet from
- * stripping them.
+ * stripping them. We echo back the request's Origin only when it is
+ * allowed, which is required for credentialed requests.
  */
 app.options('*', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || primaryOrigin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
   res.status(204).end();
 });
 
@@ -61,7 +91,7 @@ app.use(
         ],
         connectSrc:     [
           "'self'",
-          allowedOrigin,
+          ...allowedOrigins,
           'https://*.supabase.co',
         ],
         frameSrc:       ["'none'"],
@@ -85,7 +115,10 @@ app.use(
 
 /* ── CORS ─────────────────────────────────────────────────── */
 app.use(cors({
-  origin:      allowedOrigin,
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    return callback(new Error(`CORS: origin not allowed: ${origin}`));
+  },
   credentials: true,
 }));
 
