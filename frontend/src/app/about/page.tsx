@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Navbar } from '@/src/components/Navbar';
 import { Footer } from '@/src/components/Footer';
 import { PrivacyNotice } from '@/src/components/PrivacyNotice';
@@ -40,6 +41,24 @@ const OBJECTIVES = [
   'Enable community participation while protecting data integrity and credibility.',
   'Support law enforcement investigations with organized, verifiable information.',
   'Increase public awareness and engagement in missing-persons cases.',
+];
+
+// Names are derived from the "FirstName_LastName" image filenames.
+// The leader is listed first; the rest follow as members.
+const TEAM_LEADER = {
+  name: 'Mary Joyce Villanueva',
+  role: 'Team Leader',
+  photo: '/assets/icons/Mary Joyce_Villanueva.png',
+};
+
+const TEAM_MEMBERS = [
+  { name: 'Elysha Margaret Bianan', photo: '/assets/icons/Elysha Margaret_Bianan.png' },
+  { name: 'Fiona Alcantara', photo: '/assets/icons/Fiona_Alcantara.png' },
+  { name: 'John Paulo Tasane', photo: '/assets/icons/John Paulo_Tasane.png' },
+  { name: 'Jomar Poclan', photo: '/assets/icons/Jomar_Poclan.png' },
+  { name: 'Kensha Lacbao', photo: '/assets/icons/Kensha_Lacbao.png' },
+  { name: 'Lorden Xavier Alvaro', photo: '/assets/icons/Lorden Xavier_Alvaro.png' },
+  { name: 'Luane Hernandez', photo: '/assets/icons/Luane_Hernandez.png' },
 ];
 
 export default function AboutPage() {
@@ -147,15 +166,38 @@ export default function AboutPage() {
             University of Baguio, committed to applying technology for social good in
             partnership with the community and local authorities.
           </p>
-          <div className="about-team-grid">
-            <div className="about-team-card">
-              <h3>Researchers</h3>
-              <p>Academic advisers guiding the project&apos;s methodology, ethics, and impact.</p>
-            </div>
-            <div className="about-team-card">
-              <h3>Community Partners</h3>
-              <p>Law enforcement, barangay officials, and organizations supporting operations.</p>
-            </div>
+          {/* Team — leader featured first, members follow in one balanced grid */}
+          <div className="about-team">
+            <article className="about-member-card about-member-card--leader">
+              <div className="about-member-photo">
+                <Image
+                  src={TEAM_LEADER.photo}
+                  alt={TEAM_LEADER.name}
+                  fill
+                  sizes="(max-width: 900px) 45vw, 220px"
+                />
+              </div>
+              <div className="about-member-info">
+                <h3 className="about-member-name">{TEAM_LEADER.name}</h3>
+                <span className="about-member-role">{TEAM_LEADER.role}</span>
+              </div>
+            </article>
+
+            {TEAM_MEMBERS.map((m) => (
+              <article key={m.name} className="about-member-card">
+                <div className="about-member-photo">
+                  <Image
+                    src={m.photo}
+                    alt={m.name}
+                    fill
+                    sizes="(max-width: 900px) 45vw, 220px"
+                  />
+                </div>
+                <div className="about-member-info">
+                  <h3 className="about-member-name">{m.name}</h3>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </main>

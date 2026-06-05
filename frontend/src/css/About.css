@@ -104,36 +104,111 @@
   margin: 0;
 }
 
-/* Ethics + team grids */
-.about-ethics,
-.about-team-grid {
+/* Ethics grid */
+.about-ethics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
 }
 
-.about-team-grid {
-  margin-top: 1.25rem;
-}
-
-.about-ethics h3,
-.about-team-card h3 {
+.about-ethics h3 {
   font-size: 1.05rem;
   color: var(--color-text-dark);
   margin: 0 0 0.35rem;
 }
 
-.about-ethics p,
-.about-team-card p {
+.about-ethics p {
   font-size: 0.88rem;
   line-height: 1.6;
   color: var(--color-text-light);
   margin: 0;
 }
 
-.about-team-card {
-  background: var(--color-bg-light);
+/* Team — one balanced grid (leader featured first), 4 × 2 on desktop */
+.about-team {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+  margin-top: 1.75rem;
+}
+
+.about-member-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
-  padding: 1.1rem 1.2rem;
+  overflow: hidden;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.about-member-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 26px rgba(117, 21, 24, 0.13);
+}
+
+.about-member-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg-light);
+  overflow: hidden;
+}
+
+.about-member-photo img {
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.about-member-card:hover .about-member-photo img {
+  transform: scale(1.04);
+}
+
+.about-member-info {
+  padding: 0.8rem 0.95rem 1rem;
+  text-align: center;
+}
+
+.about-member-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.about-member-role {
+  display: inline-block;
+  margin-top: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-white);
+  background: var(--color-maroon);
+  border-radius: var(--border-radius-full);
+  padding: 0.2rem 0.6rem;
+}
+
+/* Leader: maroon framing */
+.about-member-card--leader {
+  border-color: var(--color-maroon);
+  box-shadow: 0 6px 18px rgba(117, 21, 24, 0.1);
+}
+
+.about-member-card--leader .about-member-role {
+  display: block;
+  width: fit-content;
+  margin-inline: auto;
+}
+
+.about-member-card--leader .about-member-name {
+  color: var(--color-maroon);
+}
+
+@media (max-width: 900px) {
+  .about-team {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
