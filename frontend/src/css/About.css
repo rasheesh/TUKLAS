@@ -191,22 +191,6 @@
   padding: 0.2rem 0.6rem;
 }
 
-/* Leader: maroon framing */
-.about-member-card--leader {
-  border-color: var(--color-maroon);
-  box-shadow: 0 6px 18px rgba(117, 21, 24, 0.1);
-}
-
-.about-member-card--leader .about-member-role {
-  display: block;
-  width: fit-content;
-  margin-inline: auto;
-}
-
-.about-member-card--leader .about-member-name {
-  color: var(--color-maroon);
-}
-
 @media (max-width: 900px) {
   .about-team {
     grid-template-columns: repeat(2, 1fr);
