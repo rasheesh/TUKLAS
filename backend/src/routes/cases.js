@@ -114,9 +114,12 @@ function isValidUrl(str) {
 
 /** True when an error indicates a missing table/relation (un-migrated DB). */
 function isMissingRelationError(err) {
+  const message = err?.message?.toLowerCase() ?? '';
   return err && (
     err.code === '42P01' ||                                  // undefined_table
-    (err.message && err.message.toLowerCase().includes('does not exist'))
+    message.includes('does not exist') ||
+    message.includes('could not find the table') ||
+    message.includes('schema cache')
   );
 }
 
@@ -823,7 +826,7 @@ router.get('/admin/pending', requireAuth, async (req, res) => {
         .from('cases_with_coords')
         .select(sel)
         .eq('status', 'PENDING')
-        .order('created_at', { ascending: true }),
+        .order('created_at', { ascending: false }),
       FULL_ADMIN_SELECT,
       CORE_SELECT
     );

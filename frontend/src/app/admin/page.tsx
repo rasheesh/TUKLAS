@@ -888,6 +888,7 @@ export default function AdminPage() {
   const [dbType,    setDbType]    = useState<'all' | 'missing' | 'unidentified'>('all');
   const [dbStatus,  setDbStatus]  = useState<'all' | 'active' | 'found' | 'identified'>('all');
   const [dbGender,  setDbGender]  = useState<'all' | 'Male' | 'Female'>('all');
+  const [dbSort,    setDbSort]    = useState<'newest' | 'oldest'>('newest');
   const [dbViewCase, setDbViewCase] = useState<VerifiedCase | null>(null);
   const [showImport, setShowImport] = useState(false);
 
@@ -1845,11 +1846,14 @@ export default function AdminPage() {
               if (dbStatus !== 'all' && c.status !== dbStatus) return false;
               if (dbGender !== 'all' && c.gender !== dbGender) return false;
               return true;
+            }).sort((a, b) => {
+              const result = new Date(b.dateReported).getTime() - new Date(a.dateReported).getTime();
+              return dbSort === 'newest' ? result : -result;
             });
 
             const activeCount     = verifiedCases.filter(c => c.status === 'active').length;
             const resolvedCount   = verifiedCases.filter(c => c.status !== 'active').length;
-            const hasActiveFilter = dbSearch || dbType !== 'all' || dbStatus !== 'all' || dbGender !== 'all';
+            const hasActiveFilter = dbSearch || dbType !== 'all' || dbStatus !== 'all' || dbGender !== 'all' || dbSort !== 'newest';
 
             return (
               <>
@@ -1864,7 +1868,7 @@ export default function AdminPage() {
                     <button
                       className="vtable-btn view"
                       style={{ fontSize: '0.78rem' }}
-                      onClick={() => { setDbSearch(''); setDbType('all'); setDbStatus('all'); setDbGender('all'); }}
+                      onClick={() => { setDbSearch(''); setDbType('all'); setDbStatus('all'); setDbGender('all'); setDbSort('newest'); }}
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="11" height="11" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                       Clear Filters
@@ -1875,7 +1879,7 @@ export default function AdminPage() {
                 {/* Filter toolbar */}
                 <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   {/* Search */}
-                  <div className="admin-search-bar" style={{ flex: '1 1 200px', minWidth: 0 }}>
+                  <div className="admin-search-bar" style={{ flex: '1 1 240px', minWidth: 220 }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
@@ -1906,6 +1910,15 @@ export default function AdminPage() {
                     <option value="all">All Types</option>
                     <option value="missing">Missing</option>
                     <option value="unidentified">Unidentified</option>
+                  </select>
+                  <select
+                    className="vtable-filter-select"
+                    value={dbSort}
+                    onChange={e => setDbSort(e.target.value as typeof dbSort)}
+                    aria-label="Sort verified cases"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
                   </select>
 
                   {/* Status filter */}

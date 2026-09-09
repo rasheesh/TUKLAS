@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { formatHeight } from '../CaseCard';
+import { casesApi, type ProofDocument, type ProofSourceLink } from '../../lib/api';
 
 /* ── Types ─────────────────────────────────────────────────── */
 export type CaseType = 'missing' | 'unidentified';
@@ -36,6 +37,85 @@ function fmt(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   });
+}
+
+function AdminProofDocuments({ caseId }: { caseId: string }) {
+  const [documents, setDocuments] = useState<ProofDocument[]>([]);
+  const [sourceLinks, setSourceLinks] = useState<ProofSourceLink[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [openingId, setOpeningId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    casesApi.getProof(caseId)
+      .then(result => {
+        if (!active) return;
+        setDocuments(result.documents);
+        setSourceLinks(result.source_links);
+      })
+      .catch(err => {
+        if (active) setError(err instanceof Error ? err.message : 'Failed to load proof.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [caseId]);
+
+  async function openDocument(document: ProofDocument) {
+    setOpeningId(document.id);
+    try {
+      const { url } = await casesApi.getProofDocumentUrl(document.id);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to open document.');
+    } finally {
+      setOpeningId(null);
+    }
+  }
+
+  return (
+    <div className="admin-modal-field full" style={{ marginTop: '0.5rem' }}>
+      <span className="admin-modal-field-label">Supporting Proof</span>
+      {loading && <span className="admin-modal-field-value">Loading proof documents...</span>}
+      {!loading && error && <span className="admin-modal-field-value" style={{ color: '#c0392b' }}>{error}</span>}
+      {!loading && !error && documents.length === 0 && sourceLinks.length === 0 && (
+        <span className="admin-modal-field-value">No supporting proof attached.</span>
+      )}
+      {!loading && !error && (documents.length > 0 || sourceLinks.length > 0) && (
+        <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.35rem' }}>
+          {documents.map(document => (
+            <div key={document.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {document.file_name}
+                <span style={{ color: 'var(--color-text-light)', marginLeft: '0.4rem' }}>
+                  ({document.is_verified ? 'Verified' : 'Pending'})
+                </span>
+              </span>
+              <button
+                type="button"
+                className="vtable-btn view"
+                onClick={() => openDocument(document)}
+                disabled={openingId === document.id}
+              >
+                {openingId === document.id ? 'Opening...' : 'Open'}
+              </button>
+            </div>
+          ))}
+          {sourceLinks.map(link => (
+            <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: '0.82rem', color: '#701515', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {link.title || link.url}
+              <span style={{ color: 'var(--color-text-light)', marginLeft: '0.4rem' }}>
+                ({link.verified ? 'Verified source' : 'Source'})
+              </span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ── Image Lightbox ─────────────────────────────────────────── */
@@ -231,6 +311,7 @@ function CaseModal({
                 <span className="admin-modal-field-label">Physical Description</span>
                 <span className="admin-modal-field-value">{c.description || '—'}</span>
               </div>
+              <AdminProofDocuments caseId={c.id} />
 
               {/* Reporter info — visible to all admin roles */}
               <div className="admin-modal-field full" style={{ background: 'rgba(112,21,21,0.04)', borderRadius: 8, padding: '0.6rem 0.75rem' }}>
@@ -280,9 +361,23 @@ function CaseModal({
 export function VerificationTable({ cases, onApprove, onReject }: VerificationTableProps) {
   const [page, setPage]           = useState(1);
   const [filter, setFilter]       = useState<'all' | CaseType>('all');
+  const [genderFilter, setGenderFilter] = useState<'all' | 'Male' | 'Female'>('all');
+  const [search, setSearch]       = useState('');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [viewCase, setViewCase]   = useState<PendingCase | null>(null);
 
-  const filtered = filter === 'all' ? cases : cases.filter(c => c.type === filter);
+  const filtered = cases
+    .filter(c => filter === 'all' || c.type === filter)
+    .filter(c => genderFilter === 'all' || c.gender === genderFilter)
+    .filter(c => {
+      const query = search.trim().toLowerCase();
+      return !query || [c.name, c.barangay, c.reference, c.reporterName]
+        .some(value => value.toLowerCase().includes(query));
+    })
+    .sort((a, b) => {
+      const result = new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+      return sortOrder === 'newest' ? result : -result;
+    });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const slice = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -296,6 +391,26 @@ export function VerificationTable({ cases, onApprove, onReject }: VerificationTa
             <span className="vtable-title">Verification Queue</span>
             <span className="vtable-count-badge">{filtered.length} pending</span>
           </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="admin-search-control">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+              </svg>
+              <input
+                className="admin-search-input"
+                placeholder="Search cases..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                aria-label="Search pending cases"
+              />
+              {search && (
+                <button type="button" className="admin-search-clear" onClick={() => { setSearch(''); setPage(1); }} aria-label="Clear pending case search">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
           <select
             className="vtable-filter-select"
             value={filter}
@@ -306,6 +421,20 @@ export function VerificationTable({ cases, onApprove, onReject }: VerificationTa
             <option value="missing">Missing</option>
             <option value="unidentified">Unidentified</option>
           </select>
+            <select className="vtable-filter-select" value={genderFilter}
+              onChange={e => { setGenderFilter(e.target.value as typeof genderFilter); setPage(1); }}
+              aria-label="Filter pending cases by gender">
+              <option value="all">All Genders</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            <select className="vtable-filter-select" value={sortOrder}
+              onChange={e => { setSortOrder(e.target.value as typeof sortOrder); setPage(1); }}
+              aria-label="Sort pending cases">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
         </div>
 
         {/* Table or empty */}

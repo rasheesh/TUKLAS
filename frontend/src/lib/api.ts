@@ -100,6 +100,16 @@ export const casesApi = {
     return request<{ cases: ApiCase[] }>(`/api/cases/admin/verified${query}`);
   },
 
+  getProof: (id: string) =>
+    request<{ documents: ProofDocument[]; source_links: ProofSourceLink[] }>(
+      `/api/cases/admin/${encodeURIComponent(id)}/proof`
+    ),
+
+  getProofDocumentUrl: (documentId: string) =>
+    request<{ url: string }>(
+      `/api/cases/admin/proof-documents/${encodeURIComponent(documentId)}/url`
+    ),
+
   submitReport: (formData: FormData) =>
     fetch(`${BASE}/api/cases`, {
       method: 'POST',
@@ -247,6 +257,28 @@ export interface ApiCase {
   published?:        boolean;
   photo_hidden?:     boolean;
   created_at:     string;
+}
+
+export interface ProofDocument {
+  id:               string;
+  document_type:    string;
+  file_name:        string;
+  file_size:        number;
+  mime_type:        string | null;
+  is_verified:      boolean;
+  verified_at:      string | null;
+  rejection_reason: string | null;
+  created_at:       string;
+}
+
+export interface ProofSourceLink {
+  id:          string;
+  url:         string;
+  link_type:   string;
+  title:       string | null;
+  verified:    boolean;
+  verified_at: string | null;
+  created_at:  string;
 }
 
 export interface TrackedReport {

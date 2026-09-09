@@ -14,6 +14,7 @@ import { pointToLatLng }     from '../lib/geoTransform.js';
 import { findCandidatePairs } from '../lib/matcher.js';
 
 const router = Router();
+let flaggedColumnAvailable;
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -89,14 +90,21 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     /* Try selecting flagged column; fall back gracefully if migration not run */
     let matchRows, matchError;
-
-    ({ data: matchRows, error: matchError } = await supabase
-      .from('case_matches')
-      .select(`
+    const matchSelect = flaggedColumnAvailable === false
+      ? `
+        id, score, distance_km, match_reasons,
+        confirmed, dismissed,
+        missing_case_id, unidentified_case_id
+      `
+      : `
         id, score, distance_km, match_reasons,
         confirmed, dismissed, flagged,
         missing_case_id, unidentified_case_id
-      `)
+      `;
+
+    ({ data: matchRows, error: matchError } = await supabase
+      .from('case_matches')
+      .select(matchSelect)
       .eq('confirmed', false)
       .eq('dismissed', false)
       .order('score', { ascending: false })
@@ -107,7 +115,10 @@ router.get('/', requireAuth, async (req, res) => {
       const isCol = matchError.code === '42703'
         || (matchError.message && matchError.message.toLowerCase().includes('column'));
       if (isCol) {
-        console.warn('[GET /matches] flagged column missing — run add_case_matches_flagged.sql. Falling back.');
+        if (flaggedColumnAvailable !== false) {
+          console.warn('[GET /matches] flagged column missing — run add_case_matches_flagged.sql. Falling back.');
+        }
+        flaggedColumnAvailable = false;
         ({ data: matchRows, error: matchError } = await supabase
           .from('case_matches')
           .select(`
@@ -121,6 +132,8 @@ router.get('/', requireAuth, async (req, res) => {
           .limit(100));
       }
       if (matchError) throw matchError;
+    } else if (flaggedColumnAvailable == null) {
+      flaggedColumnAvailable = true;
     }
     if (!matchRows || matchRows.length === 0) {
       return res.json({ matches: [] });
