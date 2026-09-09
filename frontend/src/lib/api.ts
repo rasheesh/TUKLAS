@@ -102,7 +102,8 @@ export const casesApi = {
 
   getProof: (id: string) =>
     request<{ documents: ProofDocument[]; source_links: ProofSourceLink[] }>(
-      `/api/cases/admin/${encodeURIComponent(id)}/proof`
+      `/api/cases/admin/${encodeURIComponent(id)}/proof`,
+      { cache: 'no-store' }
     ),
 
   getProofDocumentUrl: (documentId: string) =>

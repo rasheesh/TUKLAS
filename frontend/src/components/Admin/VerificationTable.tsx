@@ -48,18 +48,32 @@ function AdminProofDocuments({ caseId }: { caseId: string }) {
 
   useEffect(() => {
     let active = true;
-    casesApi.getProof(caseId)
-      .then(result => {
-        if (!active) return;
-        setDocuments(result.documents);
-        setSourceLinks(result.source_links);
-      })
-      .catch(err => {
-        if (active) setError(err instanceof Error ? err.message : 'Failed to load proof.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    setLoading(true);
+    setError('');
+
+    async function loadProof() {
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const result = await casesApi.getProof(caseId);
+          if (!active) return;
+          setDocuments(result.documents);
+          setSourceLinks(result.source_links);
+          setLoading(false);
+          return;
+        } catch (err) {
+          lastError = err;
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 350 * (attempt + 1)));
+          }
+        }
+      }
+      if (!active) return;
+      setError(lastError instanceof Error ? lastError.message : 'Failed to load proof.');
+      setLoading(false);
+    }
+
+    void loadProof();
     return () => { active = false; };
   }, [caseId]);
 

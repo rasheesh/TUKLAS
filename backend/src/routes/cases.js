@@ -741,8 +741,8 @@ router.post('/', (req, res, next) => {
     }
 
     /* ── Upload supporting documents → case-proofs bucket + proof_documents ──
-       Each step is wrapped so a missing bucket/table on an un-migrated DB
-       logs a warning and continues rather than failing the whole submission. */
+       Retry the database write because storage/database propagation can briefly
+       lag after a new case is created. Do not report success if proof was lost. */
     for (let i = 0; i < documentFiles.length; i++) {
       const file = documentFiles[i];
       const docType = PROOF_DOCUMENT_TYPES.has(req.body[`document_type_${i}`])
@@ -756,23 +756,30 @@ router.post('/', (req, res, next) => {
           .from(PROOF_BUCKET)
           .upload(path, file.buffer, { contentType: file.mimetype });
         if (uploadError) {
-          console.warn('[Proof upload] storage failed (bucket may be missing):', uploadError.message);
-          continue;
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
         }
 
-        const { error: insertError } = await supabase.from('proof_documents').insert({
-          case_id:       newCase.id,
-          document_type: docType,
-          file_name:     safeName,
-          file_path:     path,
-          file_size:     file.size,
-          mime_type:     file.mimetype,
-        });
+        let insertError;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          ({ error: insertError } = await supabase.from('proof_documents').insert({
+            case_id:       newCase.id,
+            document_type: docType,
+            file_name:     safeName,
+            file_path:     path,
+            file_size:     file.size,
+            mime_type:     file.mimetype,
+          }));
+          if (!insertError) break;
+          if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+        }
         if (insertError) {
-          console.warn('[Proof upload] proof_documents insert failed (run add_proof_and_sources.sql):', insertError.message);
+          throw new Error(`Proof record insert failed: ${insertError.message}`);
         }
       } catch (e) {
-        console.warn('[Proof upload] unexpected error — skipping document:', e.message);
+        console.error('[Proof upload] failed:', e.message);
+        return res.status(502).json({
+          error: 'The case was created, but a supporting proof document could not be saved. Please submit the case again.',
+        });
       }
     }
 
@@ -1150,6 +1157,7 @@ router.get('/admin/proof-documents/:docId/url', requireAuth, async (req, res) =>
 router.get('/admin/:id/proof', requireAuth, async (req, res) => {
   const { id } = req.params;
   try {
+    res.set('Cache-Control', 'no-store');
     const [docsRes, linksRes] = await Promise.all([
       supabase.from('proof_documents')
         .select('id, document_type, file_name, file_size, mime_type, is_verified, verified_at, rejection_reason, created_at')
