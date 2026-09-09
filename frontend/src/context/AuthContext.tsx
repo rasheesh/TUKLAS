@@ -2,6 +2,7 @@
 
 import {
   createContext, useContext, useEffect, useState, useCallback,
+  useRef,
   type ReactNode,
 } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -38,15 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,    setUser]    = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
+  const authRequestId = useRef(0);
 
   const router   = useRouter();
   const pathname = usePathname();
 
   /* Restore session on mount */
   useEffect(() => {
+    const requestId = ++authRequestId.current;
     authApi.session()
-      .then(({ user }) => setUser(user))
-      .catch(() => setUser(null))
+      .then(({ user }) => {
+        if (requestId === authRequestId.current) setUser(user);
+      })
+      .catch(() => {
+        if (requestId === authRequestId.current) setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -69,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
     setLoading(true);
+    ++authRequestId.current;
     try {
       const { user, token } = await authApi.login(email, password) as { user: SessionUser; token: string };
       /*
@@ -93,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const logout = useCallback(async () => {
+    ++authRequestId.current;
     await authApi.logout().catch(() => {});
     sessionStorage.removeItem('tuklas_token');
     setUser(null);

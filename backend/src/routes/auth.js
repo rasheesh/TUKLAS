@@ -80,7 +80,10 @@ router.post('/login', async (req, res) => {
 
 /* ── POST /api/auth/logout ────────────────────────────────── */
 router.post('/logout', async (req, res) => {
-  const token = req.cookies?.tuklas_session;
+  const token = req.cookies?.tuklas_session
+    || (req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7)
+      : null);
 
   if (token) {
     /* Sign out from Supabase (invalidates the token server-side) */
@@ -93,7 +96,10 @@ router.post('/logout', async (req, res) => {
 
 /* ── GET /api/auth/session ────────────────────────────────── */
 router.get('/session', async (req, res) => {
-  const token = req.cookies?.tuklas_session;
+  const token = req.cookies?.tuklas_session
+    || (req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7)
+      : null);
   if (!token) return res.status(401).json({ error: 'No session.' });
 
   try {
