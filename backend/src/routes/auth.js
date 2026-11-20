@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { supabase } from '../lib/supabase.js';
+import { supabase, createAuthClient } from '../lib/supabase.js';
 import { logAction } from '../lib/auditLogger.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -24,7 +24,7 @@ router.post('/login', async (req, res) => {
   try {
     /* 1. Authenticate with Supabase Auth — trim both fields to prevent
           whitespace mismatches (e.g. after a copy-paste or password reset) */
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await createAuthClient().auth.signInWithPassword({
       email:    email.trim().toLowerCase(),
       password: password.trim(),
     });
@@ -144,7 +144,7 @@ router.patch('/me/password', requireAuth, async (req, res) => {
 
   try {
     /* Step 1 — Verify current password */
-    const { error: verifyError } = await supabase.auth.signInWithPassword({
+    const { error: verifyError } = await createAuthClient().auth.signInWithPassword({
       email:    req.user.email,
       password: currentPassword.trim(),
     });

@@ -111,6 +111,14 @@ export const casesApi = {
       `/api/cases/admin/proof-documents/${encodeURIComponent(documentId)}/url`
     ),
 
+  /* Mark a proof document verified (or back to pending). A case can only be
+     published once at least one of its proof documents is verified. */
+  verifyProofDocument: (documentId: string, isVerified: boolean) =>
+    request<{ proof_document: { id: string; is_verified: boolean; verified_at: string | null } }>(
+      `/api/cases/admin/proof-documents/${encodeURIComponent(documentId)}`,
+      { method: 'PATCH', body: JSON.stringify({ is_verified: isVerified }) }
+    ),
+
   submitReport: (formData: FormData) =>
     fetch(`${BASE}/api/cases`, {
       method: 'POST',

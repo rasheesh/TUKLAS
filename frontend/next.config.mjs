@@ -14,7 +14,7 @@ const nextConfig = {
       {
         // Supabase Storage — for case photos uploaded by reporters
         protocol: 'https',
-        hostname: 'mfhpfxowxvdfqeuwkcdf.supabase.co',
+        hostname: 'nhzrujbihtalkjfvnieb.supabase.co',
       },
     ],
   },

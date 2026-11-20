@@ -45,6 +45,7 @@ function AdminProofDocuments({ caseId }: { caseId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -89,6 +90,23 @@ function AdminProofDocuments({ caseId }: { caseId: string }) {
     }
   }
 
+  async function toggleVerified(document: ProofDocument) {
+    setVerifyingId(document.id);
+    setError('');
+    try {
+      const { proof_document } = await casesApi.verifyProofDocument(document.id, !document.is_verified);
+      setDocuments(prev => prev.map(d =>
+        d.id === document.id
+          ? { ...d, is_verified: proof_document.is_verified, verified_at: proof_document.verified_at }
+          : d
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update proof document.');
+    } finally {
+      setVerifyingId(null);
+    }
+  }
+
   return (
     <div className="admin-modal-field full" style={{ marginTop: '0.5rem' }}>
       <span className="admin-modal-field-label">Supporting Proof</span>
@@ -107,14 +125,25 @@ function AdminProofDocuments({ caseId }: { caseId: string }) {
                   ({document.is_verified ? 'Verified' : 'Pending'})
                 </span>
               </span>
-              <button
-                type="button"
-                className="vtable-btn view"
-                onClick={() => openDocument(document)}
-                disabled={openingId === document.id}
-              >
-                {openingId === document.id ? 'Opening...' : 'Open'}
-              </button>
+              <span style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  className="vtable-btn view"
+                  onClick={() => openDocument(document)}
+                  disabled={openingId === document.id}
+                >
+                  {openingId === document.id ? 'Opening...' : 'Open'}
+                </button>
+                <button
+                  type="button"
+                  className={`vtable-btn ${document.is_verified ? 'reject' : 'approve'}`}
+                  onClick={() => toggleVerified(document)}
+                  disabled={verifyingId === document.id}
+                  title={document.is_verified ? 'Mark this document as not verified' : 'Mark this document as verified so the case can be published'}
+                >
+                  {verifyingId === document.id ? 'Saving...' : document.is_verified ? 'Unverify' : 'Verify'}
+                </button>
+              </span>
             </div>
           ))}
           {sourceLinks.map(link => (

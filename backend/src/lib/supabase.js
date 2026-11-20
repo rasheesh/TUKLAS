@@ -31,3 +31,17 @@ export const supabase = createClient(
     },
   }
 );
+
+/**
+ * Throwaway client for password sign-in / verification.
+ * signInWithPassword() stores the user's session on the client it is called
+ * on, so it must never be called on the shared service-role client above —
+ * doing so makes every later query run as that user and hit RLS.
+ */
+export function createAuthClient() {
+  return createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
